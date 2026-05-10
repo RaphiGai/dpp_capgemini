@@ -1,0 +1,62 @@
+<mvc:View
+    controllerName="launchpad.controller.Main"
+    xmlns="sap.m"
+    xmlns:mvc="sap.ui.core.mvc"
+    displayBlock="true"
+    height="100%">
+    <App id="app">
+        <pages>
+            <Page id="page" title="{i18n>appTitle}">
+                <content>
+                    <HBox class="sapUiSmallMargin" alignItems="Center">
+                        <Button
+                            id="btnShow"
+                            text="{i18n>btnShow}"
+                            type="Emphasized"
+                            icon="sap-icon://show"
+                            press=".onShow"
+                            class="sapUiTinyMarginEnd"/>
+                        <Button
+                            id="btnHide"
+                            text="{i18n>btnHide}"
+                            icon="sap-icon://hide"
+                            press=".onHide"/>
+                    </HBox>
+                    <Table
+                        id="productsTable"
+                        visible="false"
+                        items="{
+                            path: '/Products',
+                            parameters: { '$orderby': 'name' }
+                        }"
+                        growing="true"
+                        growingThreshold="20"
+                        class="sapUiSmallMarginBegin sapUiSmallMarginEnd">
+                        <headerToolbar>
+                            <Toolbar>
+                                <Title text="{i18n>tableTitle}"/>
+                                <ToolbarSpacer/>
+                            </Toolbar>
+                        </headerToolbar>
+                        <columns>
+                            <Column><Text text="{i18n>colName}"/></Column>
+                            <Column><Text text="{i18n>colCategory}"/></Column>
+                            <Column hAlign="End"><Text text="{i18n>colPrice}"/></Column>
+                            <Column hAlign="End"><Text text="{i18n>colStock}"/></Column>
+                        </columns>
+                        <items>
+                            <ColumnListItem>
+                                <cells>
+                                    <ObjectIdentifier title="{name}" text="{description}"/>
+                                    <Text text="{category}"/>
+                                    <ObjectNumber number="{price}" unit="{currency}"/>
+                                    <Text text="{stock}"/>
+                                </cells>
+                            </ColumnListItem>
+                        </items>
+                    </Table>
+                </content>
+            </Page>
+        </pages>
+    </App>
+</mvc:View>

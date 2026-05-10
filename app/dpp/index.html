@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="de" class="h-full">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DPP-Plattform – Mockup</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./css/main.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+          colors: {
+            brand: { 50:'#f0f7f4', 100:'#dcebe5', 200:'#bbd8cd', 300:'#92bdac', 400:'#6a9d8a', 500:'#4d836f', 600:'#3b6a59', 700:'#305548', 800:'#28443b', 900:'#223a32' }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="h-full bg-slate-50 text-slate-900 font-sans antialiased">
+
+  <div id="app" class="min-h-screen flex flex-col"></div>
+
+  <div id="toast-container" class="fixed bottom-6 right-6 z-50 space-y-2"></div>
+  <div id="modal-container" class="fixed inset-0 z-40 hidden"></div>
+
+  <script type="module" src="./js/main.js"></script>
+</body>
+</html>

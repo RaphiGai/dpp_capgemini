@@ -1,0 +1,39 @@
+---
+applications:
+
+  # CAP-Backend (OData-Service + statische UI5-Files)
+  - name: btp-test-srv
+    path: gen/srv
+    memory: 256M
+    instances: 1
+    buildpacks:
+      - nodejs_buildpack
+    services:
+      - btp-test-db
+      - btp-test-uaa
+    env:
+      OPTIMIZE_MEMORY: "true"
+
+  # HANA-DB-Deployer (One-Shot: deployt das DB-Schema, beendet sich danach)
+  - name: btp-test-db-deployer
+    path: gen/db
+    memory: 256M
+    instances: 1
+    no-route: true
+    health-check-type: process
+    buildpacks:
+      - nodejs_buildpack
+    services:
+      - btp-test-db
+
+  # Approuter (Single Entry Point fuer den Browser)
+  - name: btp-test-app
+    path: app/router
+    memory: 256M
+    instances: 1
+    buildpacks:
+      - nodejs_buildpack
+    services:
+      - btp-test-uaa
+    env:
+      destinations: '[{"name":"srv-api","url":"https://btp-test-srv.cfapps.eu10-004.hana.ondemand.com","forwardAuthToken":true}]'

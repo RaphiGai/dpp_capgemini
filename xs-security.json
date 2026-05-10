@@ -1,0 +1,30 @@
+{
+  "xsappname": "btp-test",
+  "tenant-mode": "dedicated",
+  "description": "Security profile for BTP-Test demo app",
+  "scopes": [
+    {
+      "name": "$XSAPPNAME.Viewer",
+      "description": "Read access to the product catalog"
+    }
+  ],
+  "role-templates": [
+    {
+      "name": "Viewer",
+      "description": "Anyone authenticated can view products",
+      "scope-references": ["$XSAPPNAME.Viewer"]
+    }
+  ],
+  "role-collections": [
+    {
+      "name": "BTP_Test_Viewer",
+      "description": "Viewer role collection for BTP-Test demo",
+      "role-template-references": ["$XSAPPNAME.Viewer"]
+    }
+  ],
+  "oauth2-configuration": {
+    "redirect-uris": [
+      "https://*.cfapps.eu10-004.hana.ondemand.com/**"
+    ]
+  }
+}
