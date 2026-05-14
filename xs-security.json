@@ -1,0 +1,84 @@
+{
+  "xsappname": "dpp-capgemini",
+  "tenant-mode": "shared",
+  "description": "Security profile for the DPP Capgemini backend",
+  "scopes": [
+    {
+      "name": "$XSAPPNAME.admin",
+      "description": "Organization administrator: full CRUD within own tenant"
+    },
+    {
+      "name": "$XSAPPNAME.editor",
+      "description": "DPP editor: create and update DPP data within own tenant"
+    },
+    {
+      "name": "$XSAPPNAME.viewer",
+      "description": "Read-only access to own tenant's DPP data"
+    },
+    {
+      "name": "$XSAPPNAME.authority",
+      "description": "Authority access: read-only across all tenants"
+    }
+  ],
+  "attributes": [
+    {
+      "name": "tenant",
+      "description": "Tenant / organization identifier used for row-level isolation",
+      "valueType": "string"
+    }
+  ],
+  "role-templates": [
+    {
+      "name": "Admin",
+      "description": "DPP organization administrator",
+      "scope-references": ["$XSAPPNAME.admin"],
+      "attribute-references": ["tenant"]
+    },
+    {
+      "name": "Editor",
+      "description": "DPP editor (company user)",
+      "scope-references": ["$XSAPPNAME.editor"],
+      "attribute-references": ["tenant"]
+    },
+    {
+      "name": "Viewer",
+      "description": "DPP viewer (company user)",
+      "scope-references": ["$XSAPPNAME.viewer"],
+      "attribute-references": ["tenant"]
+    },
+    {
+      "name": "Authority",
+      "description": "Market surveillance authority (cross-tenant read-only)",
+      "scope-references": ["$XSAPPNAME.authority"]
+    }
+  ],
+  "role-collections": [
+    {
+      "name": "DPP_Admin",
+      "description": "Grants DPP organization admin privileges",
+      "role-template-references": ["$XSAPPNAME.Admin"]
+    },
+    {
+      "name": "DPP_Editor",
+      "description": "Grants DPP editor privileges",
+      "role-template-references": ["$XSAPPNAME.Editor"]
+    },
+    {
+      "name": "DPP_Viewer",
+      "description": "Grants DPP viewer privileges",
+      "role-template-references": ["$XSAPPNAME.Viewer"]
+    },
+    {
+      "name": "DPP_Authority",
+      "description": "Grants authority privileges (cross-tenant read-only)",
+      "role-template-references": ["$XSAPPNAME.Authority"]
+    }
+  ],
+  "oauth2-configuration": {
+    "redirect-uris": [
+      "https://*.cfapps.eu10-004.hana.ondemand.com/**",
+      "https://*.cfapps.eu10.hana.ondemand.com/**",
+      "http://localhost:5000/**"
+    ]
+  }
+}

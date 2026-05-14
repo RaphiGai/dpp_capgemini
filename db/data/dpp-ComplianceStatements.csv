@@ -1,0 +1,7 @@
+ID;dpp_ID;compliance_standard;statement_text;valid_from;valid_until;verification_status;visibility
+cmp-001;dpp-001;ESPR;ESPR Annex II disclosure completed;2025-06-15;2030-12-31;documented;public
+cmp-002;dpp-001;OEKO_TEX;OEKO-TEX Standard 100 product class II certified;2025-03-15;2026-03-14;third_party_verified;public
+cmp-003;dpp-002;EU_Textile_Labelling;Composition declared per EU 1007/2011;2025-10-01;2030-12-31;documented;public
+cmp-004;dpp-002;GOTS;GOTS scope certificate held by Porto plant;2025-04-01;2026-03-31;third_party_verified;public
+cmp-005;dpp-002;REACH;No SVHC above 0.1% reported;2025-10-01;2026-12-31;declared;public
+cmp-006;dpp-004;EU_Textile_Labelling;Composition declared per EU 1007/2011;2025-05-01;2030-12-31;declared;public

@@ -1,0 +1,109 @@
+{
+  "abi": [
+    {
+      "type": "function",
+      "name": "anchorDPP",
+      "stateMutability": "nonpayable",
+      "inputs": [
+        { "name": "dppId", "type": "string" },
+        { "name": "dataHash", "type": "bytes32" }
+      ],
+      "outputs": [{ "name": "version", "type": "uint32" }]
+    },
+    {
+      "type": "function",
+      "name": "addDocumentHash",
+      "stateMutability": "nonpayable",
+      "inputs": [
+        { "name": "dppId", "type": "string" },
+        { "name": "docHash", "type": "bytes32" }
+      ],
+      "outputs": []
+    },
+    {
+      "type": "function",
+      "name": "getDPPAnchor",
+      "stateMutability": "view",
+      "inputs": [
+        { "name": "dppId", "type": "string" },
+        { "name": "version", "type": "uint32" }
+      ],
+      "outputs": [
+        {
+          "type": "tuple",
+          "components": [
+            { "name": "dataHash", "type": "bytes32" },
+            { "name": "blockTimestamp", "type": "uint64" },
+            { "name": "version", "type": "uint32" },
+            { "name": "submitter", "type": "address" }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "getLatestAnchor",
+      "stateMutability": "view",
+      "inputs": [{ "name": "dppId", "type": "string" }],
+      "outputs": [
+        {
+          "type": "tuple",
+          "components": [
+            { "name": "dataHash", "type": "bytes32" },
+            { "name": "blockTimestamp", "type": "uint64" },
+            { "name": "version", "type": "uint32" },
+            { "name": "submitter", "type": "address" }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "getDPPVersionCount",
+      "stateMutability": "view",
+      "inputs": [{ "name": "dppId", "type": "string" }],
+      "outputs": [{ "type": "uint256" }]
+    },
+    {
+      "type": "function",
+      "name": "getDocumentHashCount",
+      "stateMutability": "view",
+      "inputs": [{ "name": "dppId", "type": "string" }],
+      "outputs": [{ "type": "uint256" }]
+    },
+    {
+      "type": "function",
+      "name": "getDocumentHash",
+      "stateMutability": "view",
+      "inputs": [
+        { "name": "dppId", "type": "string" },
+        { "name": "index", "type": "uint256" }
+      ],
+      "outputs": [{ "type": "bytes32" }]
+    },
+    {
+      "type": "event",
+      "name": "DPPAnchored",
+      "inputs": [
+        { "name": "dppIdHash", "type": "bytes32", "indexed": true },
+        { "name": "dppId", "type": "string", "indexed": false },
+        { "name": "dataHash", "type": "bytes32", "indexed": false },
+        { "name": "version", "type": "uint32", "indexed": false },
+        { "name": "submitter", "type": "address", "indexed": true },
+        { "name": "blockTimestamp", "type": "uint64", "indexed": false }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "DocumentHashAdded",
+      "inputs": [
+        { "name": "dppIdHash", "type": "bytes32", "indexed": true },
+        { "name": "dppId", "type": "string", "indexed": false },
+        { "name": "docHash", "type": "bytes32", "indexed": true },
+        { "name": "submitter", "type": "address", "indexed": true }
+      ],
+      "anonymous": false
+    }
+  ]
+}

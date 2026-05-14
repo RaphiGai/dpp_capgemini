@@ -1,0 +1,5 @@
+ID;name;gtin;category;brand;description;owning_organization_ID
+prod-tshirt-crew;Crew Neck T-Shirt;04012345670010;tops;Greenline;Organic cotton crew neck T-shirt, unisex;org-greenline
+prod-hoodie-classic;Classic Hoodie;04012345670027;tops;Greenline;Recycled cotton blend hoodie, fleece-lined;org-greenline
+prod-jeans-straight;Straight Leg Jeans;04012345670034;bottoms;Greenline;Hemp-blend denim straight leg;org-greenline
+prod-tee-fashionista;Statement Tee;04012345670041;tops;Fashionista;Slim-fit cotton tee with print;org-fashionista

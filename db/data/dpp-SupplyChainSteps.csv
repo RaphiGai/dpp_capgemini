@@ -1,0 +1,5 @@
+ID;dpp_ID;tier;step_name;facility_ID;organization_ID;country_iso2;start_date;end_date;visibility
+sc-001;dpp-001;tier1;Cut and sew;fac-porto-plant;org-porto;PT;2025-03-01;2025-04-15;authority_only
+sc-002;dpp-001;tier2;Knitting;;org-porto;PT;2025-02-15;2025-02-28;authority_only
+sc-003;dpp-002;tier1;Cut and sew;fac-porto-plant;org-porto;PT;2025-07-01;2025-08-15;authority_only
+sc-004;dpp-002;tier2;Yarn spinning;;;TR;2025-06-01;2025-06-25;authority_only

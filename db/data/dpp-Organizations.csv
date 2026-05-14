@@ -1,0 +1,5 @@
+ID;legal_name;trade_name;organization_type;country_iso2;city;gln;tenant_id;is_platform_tenant
+org-greenline;Greenline Apparel SE;Greenline;brand;DE;Munich;4012345678901;ORG-A;true
+org-porto;Porto Confecção Lda;Porto Confeccao;manufacturer;PT;Porto;5601234567890;ORG-PORTO;false
+org-fashionista;Fashionista AG;Fashionista;brand;DE;Berlin;4012345678902;ORG-B;true
+org-authority;Bundesanstalt für Marktüberwachung;BAuA;authority;DE;Berlin;;AUTH;false

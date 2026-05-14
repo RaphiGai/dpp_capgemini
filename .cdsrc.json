@@ -1,0 +1,38 @@
+{
+  "requires": {
+    "auth": {
+      "[development]": {
+        "kind": "mocked",
+        "users": {
+          "alice.admin": {
+            "password": "x",
+            "roles": ["admin"],
+            "attr": { "tenant": "ORG-A" }
+          },
+          "bob.editor": {
+            "password": "x",
+            "roles": ["editor"],
+            "attr": { "tenant": "ORG-A" }
+          },
+          "carol.viewer": {
+            "password": "x",
+            "roles": ["viewer"],
+            "attr": { "tenant": "ORG-A" }
+          },
+          "dan.editor.b": {
+            "password": "x",
+            "roles": ["editor"],
+            "attr": { "tenant": "ORG-B" }
+          },
+          "eve.authority": {
+            "password": "x",
+            "roles": ["authority"]
+          }
+        }
+      }
+    }
+  },
+  "features": {
+    "serve_on_root": false
+  }
+}

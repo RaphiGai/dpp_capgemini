@@ -1,0 +1,8 @@
+ID;dpp_ID;material_class;fiber_name;percentage;country_of_origin;recycled_content_pct;verification_status;visibility
+mat-001;dpp-001;natural_plant;Organic Cotton;100.00;TR;0;documented;public
+mat-002;dpp-002;recycled;Recycled Cotton;60.00;PT;100;third_party_verified;public
+mat-003;dpp-002;synthetic;Polyester;40.00;DE;0;documented;public
+mat-004;dpp-003;natural_plant;Hemp;55.00;FR;0;declared;public
+mat-005;dpp-003;natural_plant;Organic Cotton;45.00;TR;0;declared;public
+mat-006;dpp-004;natural_plant;Cotton;95.00;IN;0;declared;public
+mat-007;dpp-004;synthetic;Elastane;5.00;CN;0;declared;public

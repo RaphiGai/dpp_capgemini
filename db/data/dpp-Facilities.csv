@@ -1,0 +1,4 @@
+ID;organization_ID;name;facility_type;country_iso2;region;gln;latitude;longitude;audit_status;last_audit_date
+fac-greenline-hq;org-greenline;Greenline HQ Warehouse;warehouse;DE;Bavaria;4012345678910;48.137154;11.576124;passed;2025-09-12
+fac-porto-plant;org-porto;Porto Garment Plant;manufacturing;PT;Norte;5601234567899;41.157944;-8.629105;passed;2025-07-22
+fac-fashionista-hub;org-fashionista;Fashionista Logistics Hub;warehouse;DE;Brandenburg;4012345678920;52.520008;13.404954;pending;2025-11-04

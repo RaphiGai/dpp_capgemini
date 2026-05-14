@@ -1,0 +1,6 @@
+ID;email;display_name;organization_ID;role;external_user_id
+usr-alice;alice.admin@greenline.example;Alice Admin;org-greenline;admin;alice.admin
+usr-bob;bob.editor@greenline.example;Bob Editor;org-greenline;editor;bob.editor
+usr-carol;carol.viewer@greenline.example;Carol Viewer;org-greenline;viewer;carol.viewer
+usr-dan;dan.editor.b@fashionista.example;Dan Editor;org-fashionista;editor;dan.editor.b
+usr-eve;eve.authority@baua.example;Eve Authority;org-authority;authority;eve.authority

@@ -1,0 +1,4 @@
+ID;dpp_ID;language;washing;drying;ironing;bleaching;professional;repair_info;disposal_info;visibility
+care-001;dpp-001;en;Wash at 30°C with similar colours;Tumble dry low or line dry;Iron at medium heat;Do not bleach;Dry clean if needed;Patches available via brand repair service;Recycle through textile collection;public
+care-002;dpp-002;en;Wash inside out at 30°C;Air dry preferred;Iron at low heat on reverse;Do not bleach;Dry clean if needed;Free zipper replacement within 2 years;Return to store for recycling;public
+care-003;dpp-004;en;Wash at 30°C separately;Tumble dry low;Iron at medium heat;Do not bleach;Dry clean if needed;Brand offers basic repairs at cost;Recycle through municipal textile bin;public

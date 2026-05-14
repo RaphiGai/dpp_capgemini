@@ -1,0 +1,5 @@
+ID;product_ID;issuing_organization_ID;facility_ID;gtin;granularity_level;batch_lot_number;status;visibility;verification_status;manufacturing_country_iso2;manufacturing_date_from;manufacturing_date_to;placed_on_market_date;published_at;qr_token;qr_payload_url;data_hash;data_hash_at
+dpp-001;prod-tshirt-crew;org-greenline;fac-porto-plant;04012345670010;model;;published;public;documented;PT;2025-03-01;2025-04-30;2025-06-15;2025-06-20T10:00:00Z;qr-token-tshirt-crew-001;https://dpp.example/p/qr-token-tshirt-crew-001;;
+dpp-002;prod-hoodie-classic;org-greenline;fac-porto-plant;04012345670027;batch;FW25-LOT-100;published;public;third_party_verified;PT;2025-07-01;2025-08-15;2025-10-01;2025-10-05T14:00:00Z;qr-token-hoodie-fw25-100;https://dpp.example/p/qr-token-hoodie-fw25-100;;
+dpp-003;prod-jeans-straight;org-greenline;fac-porto-plant;04012345670034;model;;draft;internal;declared;PT;;;;;;;;
+dpp-004;prod-tee-fashionista;org-fashionista;fac-fashionista-hub;04012345670041;model;;published;public;declared;DE;2025-02-01;2025-03-15;2025-05-01;2025-05-10T09:00:00Z;qr-token-fashionista-tee-001;https://dpp.example/p/qr-token-fashionista-tee-001;;
