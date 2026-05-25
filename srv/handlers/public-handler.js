@@ -7,7 +7,6 @@ const tokens = require('../lib/token');
 /**
  * Recursively expand a BOM tree starting from `productId`. Component DPPs that
  * are linked become reference entries (id + public_url) instead of being inlined.
- * Cycles are guarded via a visited set; depth is hard-capped.
  */
 async function expandBomTree(productId, share, unit, role, productsById, bomsByParent, depth = 0, visited = new Set()) {
   if (depth > 8) return null;
@@ -48,12 +47,11 @@ async function expandBomTree(productId, share, unit, role, productsById, bomsByP
   };
 }
 
-/**
- * Build the consumer-facing DTO from a published DPP. Aggregates Product +
- * Variant + Batch + Item + BOM + sustainability + certifications (Sprint-1
- * demo, public DPP page).
- */
 function toConsumerDTO(dpp, ctx) {
+  let storytelling = [];
+  if (dpp.storytelling) {
+    try { storytelling = JSON.parse(dpp.storytelling); } catch (_) { storytelling = []; }
+  }
   return {
     id: dpp.ID,
     status: dpp.status,
@@ -81,7 +79,10 @@ function toConsumerDTO(dpp, ctx) {
           fibre_composition: ctx.product.fibre_composition,
           care_instructions: ctx.product.care_instructions,
           repair_instructions: ctx.product.repair_instructions,
-          disposal_instructions: ctx.product.disposal_instructions
+          disposal_instructions: ctx.product.disposal_instructions,
+          country_of_origin: ctx.product.country_of_origin,
+          substances_of_concern: ctx.product.substances_of_concern,
+          espr_compliance: ctx.product.espr_compliance
         }
       : null,
     variant: ctx.variant
@@ -102,52 +103,17 @@ function toConsumerDTO(dpp, ctx) {
         }
       : null,
     materials: ctx.materialsTree,
-    sustainability: ctx.sustainability
-      ? {
-          co2_kg: ctx.sustainability.co2_footprint_kg,
-          water_l: ctx.sustainability.water_usage_l,
-          energy_kwh: ctx.sustainability.energy_usage_kwh,
-          recycled_content: ctx.sustainability.recycled_content_overall,
-          durability_score: ctx.sustainability.durability_score,
-          repairability_score: ctx.sustainability.repairability_score
-        }
-      : null,
-    certifications: (ctx.certifications || []).map((c) => ({
-      standard: c.standard,
-      certificate_number: c.certificate_number,
-      valid_from: c.valid_from,
-      valid_until: c.valid_until
-    })),
-    substances: (ctx.substances || []).map((s) => ({
-      name: s.substance_name,
-      cas: s.cas_number,
-      ec: s.ec_number,
-      concentration_pct: s.concentration_pct
-    })),
-    storytelling: (ctx.storytelling || []).map((s) => ({
-      title: s.title,
-      body: s.body,
-      media_url: s.media_url,
-      media_type: s.media_type
-    }))
+    storytelling
   };
 }
 
 async function loadDPPContext(dpp) {
-  const {
-    Products, ProductVariants, Batches, ProductItems, ProductBOMs,
-    Certifications, SubstancesOfConcern, SustainabilityIndicators, DPPStoryItems
-  } = cds.entities('dpp');
+  const { Products, ProductVariants, Batches, ProductItems, ProductBOMs } = cds.entities('dpp');
 
-  const [product, item, certifications, substances, sustainability, storytelling] =
-    await Promise.all([
-      SELECT.one.from(Products).where({ ID: dpp.product_ID }),
-      dpp.item_ID ? SELECT.one.from(ProductItems).where({ ID: dpp.item_ID }) : null,
-      SELECT.from(Certifications).where({ product_ID: dpp.product_ID }),
-      SELECT.from(SubstancesOfConcern).where({ product_ID: dpp.product_ID }),
-      SELECT.one.from(SustainabilityIndicators).where({ product_ID: dpp.product_ID }),
-      SELECT.from(DPPStoryItems).where({ dpp_ID: dpp.ID })
-    ]);
+  const [product, item] = await Promise.all([
+    SELECT.one.from(Products).where({ ID: dpp.product_ID }),
+    dpp.item_ID ? SELECT.one.from(ProductItems).where({ ID: dpp.item_ID }) : null
+  ]);
 
   let variant = null;
   let batch = null;
@@ -156,8 +122,6 @@ async function loadDPPContext(dpp) {
     if (batch) variant = await SELECT.one.from(ProductVariants).where({ ID: batch.variant_ID });
   }
 
-  // Aggregate BOM rooted at the product. Load the org's product graph in one
-  // pass to avoid N+1 queries while expanding the tree.
   const owningOrgId = product?.owning_organization_ID;
   const [allProducts, allBoms] = await Promise.all([
     owningOrgId
@@ -174,11 +138,7 @@ async function loadDPPContext(dpp) {
   const rootBom = await expandBomTree(dpp.product_ID, null, null, null, productsById, bomsByParent);
   const materialsTree = rootBom?.components || [];
 
-  return {
-    product, variant, batch, item,
-    materialsTree,
-    certifications, substances, sustainability, storytelling
-  };
+  return { product, variant, batch, item, materialsTree };
 }
 
 async function loadDPPByToken(token) {

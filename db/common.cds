@@ -5,18 +5,24 @@ type GTIN        : String(14);
 type GLN         : String(13);
 type EmailAddr   : String(254);
 type URL         : String(500);
-type Sha256Hex   : String(64);
 
 type ProductType : String(12) enum {
   finished;
   material;
   component;
+  packaging;
 }
 
 type ProductStatus : String(12) enum {
   draft;
   approved;
   published;
+  archived;
+}
+
+type VariantStatus : String(10) enum {
+  active;
+  inactive;
   archived;
 }
 
@@ -31,15 +37,18 @@ type BOMStatus : String(12) enum {
   archived;
 }
 
-type ESPRComplianceStatus : String(16) enum {
-  draft;
-  in_review;
-  compliant;
-  non_compliant;
+type ItemStatus : String(12) enum {
+  active;
+  sold;
+  repaired;
+  recycled;
+  disposed;
+  archived;
 }
 
 type DPPStatus : String(12) enum {
   draft;
+  in_review;
   approved;
   published;
   archived;
@@ -61,18 +70,17 @@ type Granularity : String(8) enum {
   item;
 }
 
-type ItemStatus : String(12) enum {
-  active;
-  sold;
-  repaired;
-  recycled;
-  disposed;
-}
-
 type QRCodeStatus : String(10) enum {
   active;
   invalid;
   replaced;
+}
+
+type ESPRComplianceStatus : String(16) enum {
+  draft;
+  in_review;
+  compliant;
+  non_compliant;
 }
 
 type UserRole : String(12) enum {
@@ -80,7 +88,6 @@ type UserRole : String(12) enum {
   advanced;
   user;
   viewer;
-  authority;
 }
 
 type BusinessPartnerRole : String(24) enum {
@@ -91,41 +98,6 @@ type BusinessPartnerRole : String(24) enum {
   distributor;
   retailer;
   logistics_provider;
-}
-
-type ComplianceStandard : String(24) enum {
-  ESPR;
-  EU_Textile_Labelling;
-  REACH;
-  SCIP;
-  CSDDD;
-  CSRD;
-  GOTS;
-  OEKO_TEX;
-  BLUESIGN;
-  CRADLE_TO_CRADLE;
-}
-
-type DocumentType : String(20) enum {
-  certificate;
-  audit_report;
-  test_report;
-  declaration;
-  safety_sheet;
-  care_label;
-  repair_manual;
-}
-
-type WarningSeverity : String(10) enum {
-  info;
-  warning;
-  blocking;
-}
-
-type IssueStatus : String(10) enum {
-  open;
-  resolved;
-  ignored;
 }
 
 // Generic string-id aspect (replacement for @sap/cds/common.cuid, which forces UUID).

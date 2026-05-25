@@ -1,28 +1,51 @@
 'use strict';
 
 const cds = require('@sap/cds');
-const { createHash, randomUUID } = require('crypto');
+const { randomUUID } = require('crypto');
 const tokens = require('../lib/token');
 
-const productHandlers = require('./product-handlers');
-const validationHandlers = require('./validation-handlers');
+/**
+ * Mandatory-field check used by approveDPP/publishDPP. Returns an array of
+ * human-readable error strings — empty means OK to proceed. Replaces the old
+ * ValidationWarnings persistence: errors are reported inline via req.reject.
+ */
+async function checkDPPReady(dpp) {
+  const { Products, ProductItems } = cds.entities('dpp');
+  const errors = [];
+
+  if (!dpp.product_ID) {
+    errors.push('DPP must reference a product.');
+  } else {
+    const product = await SELECT.one.from(Products).where({ ID: dpp.product_ID });
+    if (!product) {
+      errors.push(`Referenced product '${dpp.product_ID}' does not exist.`);
+    } else {
+      for (const f of ['name', 'brand', 'category', 'fibre_composition']) {
+        if (!product[f]) errors.push(`Product field '${f}' is required.`);
+      }
+    }
+  }
+  if (dpp.granularity === 'item' && !dpp.item_ID) {
+    errors.push('Item-level DPP requires a linked ProductItem.');
+  }
+  if (dpp.item_ID) {
+    const item = await SELECT.one.from(ProductItems).where({ ID: dpp.item_ID });
+    if (!item) errors.push(`Referenced ProductItem '${dpp.item_ID}' does not exist.`);
+    else if (!item.upi) errors.push('ProductItem must have a Unique Product Identity (UPI).');
+  }
+  return errors;
+}
 
 /**
  * Build a JSON snapshot of the full aggregated DPP — Product + Variant + Batch +
- * Item + BOM + sustainability/compliance — for `DPPVersions.snapshot`.
+ * Item + BOM — for `DPPs.aggregated_snapshot` and the PDF renderer.
  */
 async function buildSnapshot(dpp) {
-  const {
-    Products, ProductVariants, Batches, ProductItems, ProductBOMs,
-    Certifications, SubstancesOfConcern, SustainabilityIndicators
-  } = cds.entities('dpp');
+  const { Products, ProductVariants, Batches, ProductItems, ProductBOMs } = cds.entities('dpp');
 
-  const [product, item, certifications, substances, sustainability, bom] = await Promise.all([
+  const [product, item, bom] = await Promise.all([
     SELECT.one.from(Products).where({ ID: dpp.product_ID }),
     dpp.item_ID ? SELECT.one.from(ProductItems).where({ ID: dpp.item_ID }) : null,
-    SELECT.from(Certifications).where({ product_ID: dpp.product_ID }),
-    SELECT.from(SubstancesOfConcern).where({ product_ID: dpp.product_ID }),
-    SELECT.one.from(SustainabilityIndicators).where({ product_ID: dpp.product_ID }),
     SELECT.from(ProductBOMs).where({ parent_ID: dpp.product_ID })
   ]);
 
@@ -46,17 +69,13 @@ async function buildSnapshot(dpp) {
     variant,
     batch,
     item,
-    bom,
-    sustainability,
-    certifications,
-    substances
+    bom
   };
 }
 
 /**
  * Mark every currently-active QRCodes row for this DPP as replaced, then insert
- * a new active row pointing at `qrValue`. Keeps the most-recent QR uniquely
- * `active`; older ones remain queryable as audit trail.
+ * a new active row. Keeps the most-recent QR uniquely `active`.
  */
 async function rotateActiveQRCode(dppId, qrValue, qrImageUrl) {
   const { QRCodes } = cds.entities('dpp');
@@ -75,7 +94,7 @@ async function rotateActiveQRCode(dppId, qrValue, qrImageUrl) {
 }
 
 module.exports = (srv) => {
-  const { DPPs, DPPVersions, Documents } = srv.entities;
+  const { DPPs } = srv.entities;
 
   // ----- Defaults on CREATE -----
 
@@ -102,15 +121,6 @@ module.exports = (srv) => {
     }
   });
 
-  // ----- Document upload: compute SHA-256 + size on the way in -----
-
-  srv.before(['CREATE', 'UPDATE'], Documents, (req) => {
-    if (req.data.content instanceof Buffer) {
-      req.data.sha256 = createHash('sha256').update(req.data.content).digest('hex');
-      req.data.size_bytes = req.data.content.length;
-    }
-  });
-
   // ----- Action: approveDPP (draft → approved) -----
 
   srv.on('approveDPP', DPPs, async (req) => {
@@ -118,17 +128,11 @@ module.exports = (srv) => {
     const dpp = await SELECT.one.from(DPPs).where({ ID: id });
     if (!dpp) req.reject(404, `DPP '${id}' not found.`);
 
-    if (dpp.status === 'archived') {
-      req.reject(400, `DPP '${id}' is archived.`);
-    }
-    if (dpp.status !== 'draft') {
-      return dpp;  // idempotent — already approved/published
-    }
+    if (dpp.status === 'archived') req.reject(400, `DPP '${id}' is archived.`);
+    if (dpp.status !== 'draft' && dpp.status !== 'in_review') return dpp;
 
-    const blockingErrors = await validationHandlers.validateDPP(dpp);
-    if (blockingErrors.length) {
-      req.reject(400, `DPP cannot be approved — ${blockingErrors.length} blocking issue(s). See ValidationWarnings.`);
-    }
+    const errors = await checkDPPReady(dpp);
+    if (errors.length) req.reject(400, `DPP cannot be approved: ${errors.join(' | ')}`);
 
     await UPDATE(DPPs)
       .set({ status: 'approved', approved_at: new Date().toISOString() })
@@ -143,16 +147,10 @@ module.exports = (srv) => {
     const id = req.params[req.params.length - 1].ID;
     const dpp = await SELECT.one.from(DPPs).where({ ID: id });
     if (!dpp) req.reject(404, `DPP '${id}' not found.`);
+    if (dpp.status === 'archived') req.reject(400, `DPP '${id}' is archived and cannot be published.`);
 
-    if (dpp.status === 'archived') {
-      req.reject(400, `DPP '${id}' is archived and cannot be published.`);
-    }
-
-    // Validate again at publish time — caller might have approved earlier and edited since.
-    const blockingErrors = await validationHandlers.validateDPP(dpp);
-    if (blockingErrors.length) {
-      req.reject(400, `DPP cannot be published — ${blockingErrors.length} blocking issue(s). See ValidationWarnings.`);
-    }
+    const errors = await checkDPPReady(dpp);
+    if (errors.length) req.reject(400, `DPP cannot be published: ${errors.join(' | ')}`);
 
     const now = new Date().toISOString();
     const previouslyPublished = dpp.status === 'published';
@@ -171,30 +169,16 @@ module.exports = (srv) => {
       last_updated: now
     }).where({ ID: id });
 
-    const updated = await SELECT.one.from(DPPs).where({ ID: id });
-    const snapshot = await buildSnapshot(updated);
-    const snapshotJson = JSON.stringify(snapshot);
-
+    const draft = await SELECT.one.from(DPPs).where({ ID: id });
+    const snapshot = await buildSnapshot(draft);
     await UPDATE(DPPs)
-      .set({ aggregated_snapshot: snapshotJson })
+      .set({ aggregated_snapshot: JSON.stringify(snapshot) })
       .where({ ID: id });
 
-    await INSERT.into(DPPVersions).entries({
-      ID: randomUUID(),
-      dpp_ID: id,
-      version_no: nextVersion,
-      snapshot: snapshotJson,
-      status: 'published',
-      published_at: now,
-      published_by: req.user?.id || 'system',
-      change_reason: req.data?.change_reason || null
-    });
-
-    // Mint or rotate the active QR Code row (Sheet 5: DPP → QR Code 1:1).
     const qrImageUrl = `${process.env.PUBLIC_BASE_URL || ''}/public/dpp/${qrToken}/qr.png`;
     await rotateActiveQRCode(id, payloadUrl, qrImageUrl);
 
-    return updated;
+    return SELECT.one.from(DPPs).where({ ID: id });
   });
 
   // ----- Action: archiveDPP -----
@@ -244,17 +228,6 @@ module.exports = (srv) => {
     const QRCode = require('qrcode');
     const pngBuffer = await QRCode.toBuffer(payload, { type: 'png', margin: 1, scale: 6 });
     return { png: pngBuffer.toString('base64'), payload };
-  });
-
-  // ----- Function: getValidationReport -----
-
-  srv.on('getValidationReport', DPPs, async (req) => {
-    const id = req.params[req.params.length - 1].ID;
-    const { ValidationWarnings } = cds.entities('dpp');
-    const rows = await SELECT.from(ValidationWarnings)
-      .columns(['warning_code', 'severity', 'field_name', 'message'])
-      .where({ entity_type: 'DPP', entity_id: id, resolved: false });
-    return rows;
   });
 };
 

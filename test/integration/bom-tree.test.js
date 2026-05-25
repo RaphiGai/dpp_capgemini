@@ -5,8 +5,7 @@ const tokens = require('../../srv/lib/token');
 
 const { GET, axios } = cds.test().in(__dirname + '/../..');
 
-const aliceAdmin   = { auth: { username: 'alice.admin',   password: 'x' } };
-const eveAuthority = { auth: { username: 'eve.authority', password: 'x' } };
+const aliceAdmin = { auth: { username: 'alice.admin', password: 'x' } };
 
 describe('Product BOM (Products + ProductBOMs)', () => {
   test('alice.admin can read tenant-scoped Products including materials', async () => {
@@ -24,13 +23,6 @@ describe('Product BOM (Products + ProductBOMs)', () => {
   test('alice.admin cannot see Fashionista products', async () => {
     const { data } = await GET('/odata/v4/dpp/Products', aliceAdmin);
     expect(data.value.some((p) => p.owning_organization_ID === 'org-fashionista')).toBe(false);
-  });
-
-  test('eve.authority sees Products across tenants', async () => {
-    const { data } = await GET('/odata/v4/authority/Products?$select=ID,owning_organization_ID', eveAuthority);
-    const orgs = new Set(data.value.map((p) => p.owning_organization_ID));
-    expect(orgs.has('org-greenline')).toBe(true);
-    expect(orgs.has('org-fashionista')).toBe(true);
   });
 
   test('Classic T-Shirt BOM links to cotton and elastane materials', async () => {

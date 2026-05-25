@@ -17,16 +17,15 @@ const MOCK_USERS_NOTE = [
   '',
   'Click **Authorize** above and use any of the following — password is always `x`.',
   '',
-  '| User             | Role      | Tenant            |',
-  '| ---------------- | --------- | ----------------- |',
-  '| `alice.admin`    | admin     | ORG-A (Greenline) |',
-  '| `bob.advanced`   | advanced  | ORG-A             |',
-  '| `carol.user`     | user      | ORG-A             |',
-  '| `dave.viewer`    | viewer    | ORG-A             |',
+  '| User             | Role      | Tenant              |',
+  '| ---------------- | --------- | ------------------- |',
+  '| `alice.admin`    | admin     | ORG-A (Greenline)   |',
+  '| `bob.advanced`   | advanced  | ORG-A               |',
+  '| `carol.user`     | user      | ORG-A               |',
+  '| `dave.viewer`    | viewer    | ORG-A               |',
   '| `dan.advanced.b` | advanced  | ORG-B (Fashionista) |',
-  '| `eve.authority`  | authority | — (cross-tenant, AuthorityService only) |',
   '',
-  '`alice.admin` / `bob.advanced` cover most DPPService scenarios. `dan.advanced.b` verifies tenant isolation. `eve.authority` is required for `/odata/v4/authority`.'
+  '`alice.admin` / `bob.advanced` cover most scenarios. `dan.advanced.b` verifies tenant isolation.'
 ].join('\n');
 
 /**

@@ -28,10 +28,6 @@
             "password": "x",
             "roles": ["advanced"],
             "attr": { "tenant": "ORG-B" }
-          },
-          "eve.authority": {
-            "password": "x",
-            "roles": ["authority"]
           }
         }
       }

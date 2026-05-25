@@ -26,7 +26,7 @@ async function descendantsReach(startId, targetId, ProductBOMs) {
 module.exports = (srv) => {
   const {
     Products, ProductVariants, Batches, ProductItems,
-    ProductBOMs, ProductBusinessPartners, BusinessPartners
+    ProductBOMs, BusinessPartners
   } = srv.entities;
 
   // ----- Tenant defaulting on CREATE -----
@@ -91,7 +91,7 @@ module.exports = (srv) => {
     if (!product) req.reject(404, `Product '${id}' not found.`);
 
     await UPDATE(Products)
-      .set({ status: 'archived', archived: true })
+      .set({ status: 'archived' })
       .where({ ID: id });
 
     return SELECT.one.from(Products).where({ ID: id });
