@@ -9,24 +9,59 @@ const publicHandler = require('./handlers/public-handler');
  * unblock BTP demos on shared learn-tenants where the developer cannot
  * assign role collections in the cockpit. Switch off by removing the env
  * (e.g. once real XSUAA role assignments are in place).
+ *
+ * CAP looks at the user object in multiple places (`req.user`, `cds.context.user`).
+ * Mutate via multiple representations to ensure @restrict sees the granted roles.
  */
+const DEMO_ROLES = ['admin', 'advanced', 'user', 'viewer', 'authority'];
+
+function grantDemoRoles(user) {
+  if (!user) return user;
+  // Object-style role bag CAP looks at internally
+  user._roles = DEMO_ROLES.reduce((a, r) => ({ ...a, [r]: 1 }), {});
+  // Array-style sometimes used
+  user.roles = [...DEMO_ROLES];
+  // Method overrides — every role check returns true
+  user.is = () => true;
+  user.has = () => true;
+  // Tenant attribute (consumed by @restrict where-clauses via $user.tenant)
+  user.attr = user.attr || {};
+  if (!user.attr.tenant) user.attr.tenant = 'ORG-A';
+  return user;
+}
+
 function demoModeBypass(req, _res, next) {
   if (process.env.DEMO_MODE !== 'true') return next();
-  if (req.user) {
-    req.user._roles = { admin: 1, advanced: 1, user: 1, viewer: 1, authority: 1 };
-    req.user.is = () => true;
-    req.user.attr = req.user.attr || {};
-    if (!req.user.attr.tenant) req.user.attr.tenant = 'ORG-A';
+  grantDemoRoles(req.user);
+  if (cds.context && cds.context.user && cds.context.user !== req.user) {
+    grantDemoRoles(cds.context.user);
   }
+  console.log(`[DEMO_MODE] grants on ${req.method} ${req.path} for user=${req.user?.id || '(anon)'}`);
   next();
 }
 
-// Inject into CAP's middleware chain so it runs AFTER auth + ctx_user populated
-// req.user, but BEFORE service dispatch (which is where @restrict gets evaluated).
+// Inject into CAP's middleware chain. cds.middlewares.before is populated by
+// CAP at first access; we push our middleware here so it runs after auth +
+// ctx_user (where req.user is populated) and before service dispatch.
 if (process.env.DEMO_MODE === 'true' && cds.middlewares && Array.isArray(cds.middlewares.before)) {
   cds.middlewares.before.push(demoModeBypass);
   console.warn('[DEMO_MODE] every authenticated request gets full admin rights and tenant=ORG-A');
 }
+
+// Belt + suspenders: also hook on every served service so srv.before('*')
+// flips the user before any @restrict-driven query runs.
+cds.on('served', (services) => {
+  if (process.env.DEMO_MODE !== 'true') return;
+  for (const srv of Object.values(services)) {
+    if (typeof srv.before === 'function') {
+      srv.before('*', (req) => {
+        grantDemoRoles(req.user);
+        if (cds.context && cds.context.user) grantDemoRoles(cds.context.user);
+      });
+    }
+  }
+  console.warn('[DEMO_MODE] srv.before hooks attached to all services');
+});
 
 // Swagger UI is loaded lazily so test environments without the dev-only
 // dependency installed can still boot.
