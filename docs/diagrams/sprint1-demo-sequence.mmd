@@ -1,0 +1,83 @@
+%%{init: {'theme':'neutral', 'themeVariables': { 'fontSize': '12px'}}}%%
+sequenceDiagram
+    autonumber
+    actor U as Company Advanced User
+    participant S as DPPService<br/>OData V4
+    participant H as Handlers<br/>(srv/handlers)
+    participant DB as HANA Cloud
+    actor C as Consumer (Mobile)
+    participant P as Public Handler
+
+    rect rgb(232, 245, 233)
+        Note over U,DB: Stammdaten anlegen (Sprint-1-Demo Schritte 2-7)
+        U->>+S: POST /BusinessPartners (Braga Factory)
+        S->>DB: INSERT BusinessPartners
+        S-->>-U: 201 Created
+
+        U->>+S: POST /Products (Classic T-Shirt, product_type=finished)
+        S->>DB: INSERT Products
+        S-->>-U: 201 Created
+
+        U->>+S: POST /Products (Cotton Fabric, product_type=material)
+        S->>DB: INSERT Products
+        S-->>-U: 201 Created
+
+        U->>+S: POST /ProductBOMs (T-Shirt → Cotton 95%)
+        S->>H: BOM cycle check (descendantsReach)
+        S->>DB: INSERT ProductBOMs
+        S-->>-U: 201 Created
+
+        U->>+S: POST /ProductVariants (Blue M)
+        S->>DB: INSERT ProductVariants
+        S-->>-U: 201 Created
+
+        U->>+S: POST /Batches (factory=BP)
+        S->>DB: INSERT Batches
+        S-->>-U: 201 Created
+
+        U->>+S: POST /ProductItems (serial 12345, UPI-12345)
+        S->>DB: INSERT ProductItems
+        S-->>-U: 201 Created
+    end
+
+    rect rgb(255, 248, 225)
+        Note over U,DB: DPP-Workflow (Schritte 8-9)
+        U->>+S: POST /DPPs (item-level)
+        S->>H: defaults (granularity, status, version)
+        S->>DB: INSERT DPPs
+        S->>DB: UPDATE ProductItems.dpp_ID
+        S-->>-U: 201 Created
+
+        U->>+S: POST /DPPs(id)/approveDPP
+        S->>H: checkDPPReady()
+        H->>DB: SELECT Product + Item
+        H-->>S: validation OK
+        S->>DB: UPDATE DPPs status='approved', approved_at=now
+        S-->>-U: 200 OK
+
+        U->>+S: POST /DPPs(id)/publishDPP
+        S->>H: checkDPPReady() again
+        H->>DB: SELECT Product + Item
+        S->>H: tokens.generate() → HMAC token
+        S->>DB: UPDATE DPPs status='published', qr_token, qr_payload_url, public_url
+        S->>H: buildSnapshot() → aggregate Product+Variant+Batch+Item+BOM
+        S->>DB: UPDATE DPPs.aggregated_snapshot
+        S->>H: rotateActiveQRCode()
+        S->>DB: UPDATE old QRCode status='replaced'
+        S->>DB: INSERT new active QRCode
+        S-->>-U: 200 OK + qr_payload_url
+    end
+
+    rect rgb(227, 242, 253)
+        Note over C,DB: Consumer-Pfad (Schritte 10-12)
+        C->>+S: GET /DPPs(id)/generateQRCode (or QR-PNG)
+        S-->>-C: Base64 PNG (or printed label)
+
+        Note over C: Scanner liest QR → URL
+        C->>+P: GET /public/dpp/{token}
+        P->>P: tokens.verify(token)
+        P->>DB: SELECT DPP where qr_token=...<br/>AND status='published' AND visibility='public'
+        P->>DB: SELECT Product, Variant, Batch, Item
+        P->>DB: SELECT ProductBOMs (rekursiv, expandBomTree)
+        P-->>-C: Consumer-DTO (JSON)<br/>Product · Variant · Batch · Item · BOM · QR
+    end

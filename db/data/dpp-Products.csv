@@ -1,5 +1,5 @@
 ID;owning_organization_ID;product_type;name;brand;category;model;description;gtin;fibre_composition;care_instructions;repair_instructions;disposal_instructions;country_of_origin;substances_of_concern;espr_compliance;status
 prod-tshirt-classic;org-greenline;finished;Classic T-Shirt;Greenline;tops;Classic Tee 2026;Organic cotton crew neck T-shirt;04012345670010;95% Cotton, 5% Elastane;Wash at 30°C, no bleach;Sew small holes with cotton thread;Textile recycling bin;PT;None reported above 0.1%;compliant;draft
-prod-mat-cotton;org-greenline;material;Organic Cotton Fabric;Greenline;material;OC-160;Organic cotton woven fabric 160 g/m²;;100% Organic Cotton;;;Compost or textile recycling;TR;Trace ginning residues;compliant;approved
-prod-mat-elastane;org-greenline;material;Elastane Yarn;Greenline;material;EL-40;Elastane yarn for stretch blends;;100% Elastane;;;Non-recyclable;DE;None reported;in_review;approved
+prod-mat-cotton;org-greenline;material;Organic Cotton Fabric;Greenline;material;OC-160;Organic cotton woven fabric 160 g/m²;04012345670027;100% Organic Cotton;;;Compost or textile recycling;TR;Trace ginning residues;compliant;approved
+prod-mat-elastane;org-greenline;material;Elastane Yarn;Greenline;material;EL-40;Elastane yarn for stretch blends;04012345670034;100% Elastane;;;Non-recyclable;DE;None reported;in_review;approved
 prod-tee-fashionista;org-fashionista;finished;Statement Tee;Fashionista;tops;Statement-2026;Slim-fit cotton tee with print;04012345670041;100% Cotton;Wash at 40°C;;Textile recycling bin;IT;Disclosure pending;draft;draft

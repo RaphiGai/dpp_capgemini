@@ -1,0 +1,37 @@
+%%{init: {'theme':'neutral', 'themeVariables': { 'fontSize': '13px'}}}%%
+stateDiagram-v2
+    [*] --> draft : POST /DPPs
+
+    draft --> approved : approveDPP()<br/>(mandatory fields OK)
+    draft --> in_review : manual transition<br/>(future workflow)
+    in_review --> approved : approveDPP()
+
+    approved --> published : publishDPP()<br/>+ buildSnapshot<br/>+ rotateActiveQRCode<br/>+ DPPVersion archive (Sprint 2+)
+
+    published --> published : publishDPP()<br/>(version++ on re-publish)
+
+    draft --> archived : archiveDPP()
+    in_review --> archived : archiveDPP()
+    approved --> archived : archiveDPP()
+    published --> archived : archiveDPP()
+
+    archived --> [*]
+
+    note right of published
+        Side effects on entry:
+        • DPPs.published_at set
+        • DPPs.qr_token (HMAC-SHA256)
+        • DPPs.qr_payload_url
+        • DPPs.public_url
+        • DPPs.aggregated_snapshot (JSON)
+        • previous QRCode → status='replaced'
+        • new active QRCode row inserted
+    end note
+
+    note right of approved
+        Validation gate (checkDPPReady):
+        • product reference exists
+        • product.{name, brand, category, fibre_composition} not null
+        • item_ID present for granularity='item'
+        • ProductItem.upi not null
+    end note

@@ -1,0 +1,77 @@
+%%{init: {'theme':'neutral', 'themeVariables': { 'fontSize': '13px'}}}%%
+graph TB
+    classDef client     fill:#e3f2fd,stroke:#1976d2,color:#0d47a1
+    classDef btp        fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20
+    classDef app        fill:#fff8e1,stroke:#f57c00,color:#e65100
+    classDef handler    fill:#f3e5f5,stroke:#6a1b9a,color:#4a148c
+    classDef lib        fill:#fce4ec,stroke:#c2185b,color:#880e4f
+    classDef db         fill:#fbe9e7,stroke:#bf360c,color:#3e2723
+
+    %% ---------- Client Layer ----------
+    subgraph CL["Client Layer"]
+        UI["SAPUI5 / Fiori Elements<br/>(TBD)"]
+        QR["Mobile Browser<br/>via QR-Scan"]
+        AUD["HTTP Client<br/>(Auditor / Behörde)"]
+    end
+    class UI,QR,AUD client
+
+    %% ---------- BTP Cloud Foundry ----------
+    subgraph CF["SAP BTP — Cloud Foundry"]
+        APPROUTER["Application Router"]
+        XSUAA["XSUAA<br/>Authorization & Trust"]
+        class APPROUTER,XSUAA btp
+
+        subgraph SRV["dpp-capgemini-srv (Node.js, CAP)"]
+            ODATA["DPPService<br/>OData V4<br/>/odata/v4/dpp"]
+            REST["Public REST<br/>/public/dpp/:token<br/>/healthz"]
+            class ODATA,REST app
+
+            subgraph H["Handler Layer (srv/handlers/)"]
+                PH["product-handlers<br/>defaults · BOM cycle"]
+                DH["dpp-handlers<br/>approve/publish/<br/>archive · snapshot ·<br/>QR rotation"]
+                IH["import-handlers<br/>XLSX → UPSERT"]
+                EH["export-handlers<br/>XLSX writer"]
+                PDH["pdf-handlers<br/>DPP-PDF · QR-Label"]
+                PUH["public-handler<br/>token verify ·<br/>consumer DTO"]
+            end
+            class PH,DH,IH,EH,PDH,PUH handler
+
+            subgraph L["Lib Layer (srv/lib/)"]
+                TOK["token.js<br/>HMAC-SHA256"]
+                XLS["excel-templates<br/>columns · parser ·<br/>validator"]
+                PDF["pdf-renderer<br/>PDFKit · QRCode"]
+            end
+            class TOK,XLS,PDF lib
+        end
+    end
+
+    %% ---------- Persistence ----------
+    HANA[("SAP HANA Cloud<br/>HDI Container<br/>11 catalogue tables")]
+    class HANA db
+
+    %% ---------- Flows ----------
+    UI -->|"OData V4 + JWT"| APPROUTER
+    AUD -->|"OData V4 + JWT"| APPROUTER
+    QR -->|"HTTP GET<br/>(no auth)"| REST
+    APPROUTER -->|"JWT verify"| XSUAA
+    APPROUTER -->|"forward"| ODATA
+
+    ODATA --> PH
+    ODATA --> DH
+    ODATA --> IH
+    ODATA --> EH
+    ODATA --> PDH
+    REST  --> PUH
+
+    DH  --> TOK
+    PUH --> TOK
+    IH  --> XLS
+    EH  --> XLS
+    PDH --> PDF
+
+    PH  -->|"CDS query"| HANA
+    DH  -->|"CDS query"| HANA
+    IH  -->|"INSERT/UPDATE"| HANA
+    EH  -->|"SELECT"| HANA
+    PDH -->|"SELECT"| HANA
+    PUH -->|"SELECT"| HANA

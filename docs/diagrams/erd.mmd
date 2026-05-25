@@ -1,0 +1,157 @@
+%%{init: {'theme':'neutral', 'themeVariables': { 'fontSize': '13px'}}}%%
+erDiagram
+    Organizations ||--o{ Users : "owns"
+    Organizations ||--o{ BusinessPartners : "owns"
+    Organizations ||--o{ Products : "owns"
+
+    BusinessPartners ||--o{ BusinessPartnerRoles : "has roles"
+    BusinessPartners ||--o{ Batches : "factory"
+    BusinessPartners ||--o{ Batches : "supplier"
+
+    Products ||--o{ ProductVariants : "has variants"
+    Products ||--o{ ProductBOMs : "parent of"
+    Products ||--o{ ProductBOMs : "component in"
+
+    ProductVariants ||--o{ Batches : "produced in"
+    Batches ||--o{ ProductItems : "contains"
+    ProductItems ||--o| DPPs : "1:1 DPP"
+
+    DPPs ||--o{ QRCodes : "QR history"
+    ProductBOMs }o--o| DPPs : "linked material DPP"
+
+    Organizations {
+        string ID PK
+        string legal_name
+        string trade_name
+        string country_iso2
+        string website_url
+        string contact_email
+        string gln
+        string tenant_id UK
+        boolean is_platform_tenant
+    }
+
+    Users {
+        string ID PK
+        string email
+        string display_name
+        string role "enum"
+        boolean active
+        string organization_ID FK
+    }
+
+    BusinessPartners {
+        string ID PK
+        string name
+        string country_iso2
+        string city
+        string address
+        string contact_person
+        string contact_email
+        string identifier "GLN/VAT/DUNS"
+        boolean archived
+        string owning_organization_ID FK
+    }
+
+    BusinessPartnerRoles {
+        string ID PK
+        string role "enum"
+        string partner_ID FK
+    }
+
+    Products {
+        string ID PK
+        string product_type "enum"
+        string name
+        string brand
+        string category
+        string model
+        string description
+        string gtin
+        string fibre_composition
+        string care_instructions
+        string repair_instructions
+        string disposal_instructions
+        string country_of_origin
+        string substances_of_concern
+        string espr_compliance "enum"
+        string status "enum"
+        string owning_organization_ID FK
+    }
+
+    ProductVariants {
+        string ID PK
+        string color
+        string size
+        string sku
+        string gtin
+        integer weight_g
+        string status "enum"
+        string product_ID FK
+    }
+
+    Batches {
+        string ID PK
+        string batch_number
+        date production_date
+        string country_of_origin
+        string production_stage
+        decimal co2_footprint_kg
+        decimal recycled_content_pct
+        string status "enum"
+        string variant_ID FK
+        string factory_ID FK
+        string supplier_ID FK
+    }
+
+    ProductItems {
+        string ID PK
+        string serial_number
+        string upi UK
+        string item_status "enum"
+        date created_date
+        string batch_ID FK
+        string dpp_ID FK
+    }
+
+    ProductBOMs {
+        string ID PK
+        decimal quantity
+        string unit "% / kg / m / pcs"
+        string component_role
+        boolean is_mandatory
+        string status "enum"
+        string parent_ID FK
+        string component_ID FK
+        string linked_dpp_ID FK
+    }
+
+    DPPs {
+        string ID PK
+        string granularity "enum"
+        string dpp_type "enum"
+        string status "enum"
+        string visibility "enum"
+        integer current_version
+        string qr_token UK
+        string qr_payload_url
+        string public_url
+        timestamp approved_at
+        timestamp published_at
+        timestamp archived_at
+        date valid_from
+        string aggregated_snapshot "JSON"
+        string storytelling "JSON"
+        string product_ID FK
+        string item_ID FK
+    }
+
+    QRCodes {
+        string ID PK
+        string qr_value
+        string qr_image_url
+        string status "enum"
+        timestamp created_at
+        timestamp replaced_at
+        string dpp_ID FK
+    }
