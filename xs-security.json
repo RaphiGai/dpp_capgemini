@@ -1,92 +1,25 @@
 {
   "xsappname": "dpp-capgemini",
-  "tenant-mode": "shared",
-  "description": "Security profile for the DPP Capgemini backend",
+  "tenant-mode": "dedicated",
+  "description": "Security profile for the DPP Capgemini backend. App-internal RBAC: identity comes from XSUAA, role + tenant are looked up from the Users table by external_user_id / email.",
   "scopes": [
     {
-      "name": "$XSAPPNAME.admin",
-      "description": "Organization administrator: full CRUD within own tenant + user management"
-    },
-    {
-      "name": "$XSAPPNAME.advanced",
-      "description": "Company advanced user: full CRUD on products, BOM, DPPs within own tenant"
-    },
-    {
-      "name": "$XSAPPNAME.user",
-      "description": "Company user: read tenant data + create/update product items and DPPs"
-    },
-    {
-      "name": "$XSAPPNAME.viewer",
-      "description": "Read-only access to own tenant's DPP data"
-    },
-    {
-      "name": "$XSAPPNAME.authority",
-      "description": "Authority access: read-only across all tenants"
-    }
-  ],
-  "attributes": [
-    {
-      "name": "tenant",
-      "description": "Tenant / organization identifier used for row-level isolation",
-      "valueType": "string"
+      "name": "$XSAPPNAME.AuthenticatedUser",
+      "description": "Any logged-in user — role + tenant are resolved by the backend from the Users table"
     }
   ],
   "role-templates": [
     {
-      "name": "Admin",
-      "description": "DPP organization administrator",
-      "scope-references": ["$XSAPPNAME.admin"],
-      "attribute-references": ["tenant"]
-    },
-    {
-      "name": "Advanced",
-      "description": "DPP advanced company user",
-      "scope-references": ["$XSAPPNAME.advanced"],
-      "attribute-references": ["tenant"]
-    },
-    {
-      "name": "User",
-      "description": "DPP company user",
-      "scope-references": ["$XSAPPNAME.user"],
-      "attribute-references": ["tenant"]
-    },
-    {
-      "name": "Viewer",
-      "description": "DPP viewer (company user)",
-      "scope-references": ["$XSAPPNAME.viewer"],
-      "attribute-references": ["tenant"]
-    },
-    {
-      "name": "Authority",
-      "description": "Market surveillance authority (cross-tenant read-only)",
-      "scope-references": ["$XSAPPNAME.authority"]
+      "name": "AuthenticatedUser",
+      "description": "Any logged-in user (role refinement happens in the app)",
+      "scope-references": ["$XSAPPNAME.AuthenticatedUser"]
     }
   ],
   "role-collections": [
     {
-      "name": "DPP_Admin",
-      "description": "Grants DPP organization admin privileges",
-      "role-template-references": ["$XSAPPNAME.Admin"]
-    },
-    {
-      "name": "DPP_Advanced",
-      "description": "Grants DPP advanced company user privileges",
-      "role-template-references": ["$XSAPPNAME.Advanced"]
-    },
-    {
-      "name": "DPP_User",
-      "description": "Grants DPP company user privileges",
-      "role-template-references": ["$XSAPPNAME.User"]
-    },
-    {
-      "name": "DPP_Viewer",
-      "description": "Grants DPP viewer privileges",
-      "role-template-references": ["$XSAPPNAME.Viewer"]
-    },
-    {
-      "name": "DPP_Authority",
-      "description": "Grants authority privileges (cross-tenant read-only)",
-      "role-template-references": ["$XSAPPNAME.Authority"]
+      "name": "DPP_AuthenticatedUser",
+      "description": "Default collection — assign to every user that should be able to log in to the DPP app",
+      "role-template-references": ["$XSAPPNAME.AuthenticatedUser"]
     }
   ],
   "oauth2-configuration": {

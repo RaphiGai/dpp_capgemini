@@ -4,30 +4,29 @@
       "[development]": {
         "kind": "mocked",
         "users": {
-          "alice.admin": {
+          "kka_learn_235": {
             "password": "x",
-            "roles": ["admin"],
+            "roles": ["company_advanced"],
             "attr": { "tenant": "ORG-A" }
           },
-          "bob.advanced": {
+          "alice.advanced": {
             "password": "x",
-            "roles": ["advanced"],
+            "roles": ["company_advanced"],
             "attr": { "tenant": "ORG-A" }
           },
           "carol.user": {
             "password": "x",
-            "roles": ["user"],
-            "attr": { "tenant": "ORG-A" }
-          },
-          "dave.viewer": {
-            "password": "x",
-            "roles": ["viewer"],
+            "roles": ["company_user"],
             "attr": { "tenant": "ORG-A" }
           },
           "dan.advanced.b": {
             "password": "x",
-            "roles": ["advanced"],
+            "roles": ["company_advanced"],
             "attr": { "tenant": "ORG-B" }
+          },
+          "eve.enduser": {
+            "password": "x",
+            "roles": ["end_user"]
           }
         }
       }

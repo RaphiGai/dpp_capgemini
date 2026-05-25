@@ -83,11 +83,10 @@ type ESPRComplianceStatus : String(16) enum {
   non_compliant;
 }
 
-type UserRole : String(12) enum {
-  admin;
-  advanced;
-  user;
-  viewer;
+type UserRole : String(20) enum {
+  company_advanced;
+  company_user;
+  end_user;
 }
 
 type BusinessPartnerRole : String(24) enum {

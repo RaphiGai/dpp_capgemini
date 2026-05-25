@@ -5,7 +5,7 @@ const tokens = require('../../srv/lib/token');
 
 const { GET, axios } = cds.test().in(__dirname + '/../..');
 
-const aliceAdmin = { auth: { username: 'alice.admin', password: 'x' } };
+const aliceAdmin = { auth: { username: 'alice.advanced', password: 'x' } };
 
 describe('Product BOM (Products + ProductBOMs)', () => {
   test('alice.admin can read tenant-scoped Products including materials', async () => {

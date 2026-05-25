@@ -13,7 +13,7 @@ The schema is strictly aligned with the **Fashion DPP Object Field Catalogue** (
 - SAP Cloud Application Programming Model (CAP), Node.js, `@sap/cds` ^9
 - CDS data model, OData V4 services, auto-generated OpenAPI / Swagger
 - SQLite (development) / SAP HANA Cloud (production on SAP BTP)
-- XSUAA authentication with four roles: `admin`, `advanced`, `user`, `viewer`
+- XSUAA authentication with three roles: `company_advanced`, `company_user`, `end_user` (XSUAA issues a single `AuthenticatedUser` scope; the backend resolves the application role + tenant from the `Users` table)
 - Public consumer endpoint (`/public/dpp/:token`, no login) with HMAC-signed QR-code PNG
 - Excel import/export (XLSX) and PDF export (DPP + QR label) via PDFKit
 - Jest unit tests + `cds.test` integration tests
@@ -48,7 +48,7 @@ The data model is declared in CDS (SAP Cloud Application Programming Model) and 
 | `Granularity` | enum | model, batch, item |
 | `QRCodeStatus` | enum | active, invalid, replaced |
 | `ESPRComplianceStatus` | enum | draft, in_review, compliant, non_compliant |
-| `UserRole` | enum | admin, advanced, user, viewer |
+| `UserRole` | enum | company_advanced, company_user, end_user |
 | `BusinessPartnerRole` | enum | supplier, manufacturer, recycler, certification_body, distributor, retailer, logistics_provider |
 
 The `identified` aspect provides a readable `String(36)` key instead of a UUID. This is a deliberate choice so that sample IDs such as `dpp-12345` and upstream system identifiers can be kept unchanged.
@@ -320,45 +320,50 @@ The HMAC prefix lets the public route reject forged tokens in constant time (`ti
 
 ## 2.5 BTP Deployment Architecture
 
-The deployment topology onto SAP BTP Cloud Foundry is maintained as a separate editable diagram in [diagrams/btp-architecture.drawio](diagrams/btp-architecture.drawio). It can be opened in [diagrams.net](https://app.diagrams.net) or VS Code with the *Draw.io Integration* extension. See [diagrams/README.md](diagrams/README.md) for the swap-to-official-SAP-BTP-icons workflow.
+Deployment topology onto SAP BTP Cloud Foundry. The diagram embeds the official SAP BTP Solution Diagrams icons (Apache-2.0, <https://github.com/SAP/btp-solution-diagrams>) for Cloud Foundry Runtime, HANA Cloud, XSUAA, and the out-of-scope services (Destination, Document Management, Alert Notification, Application Logging).
+
+![BTP architecture](diagrams/btp-architecture.png)
+
+The editable source is [diagrams/btp-architecture.drawio](diagrams/btp-architecture.drawio); the SVG export is in [diagrams/btp-architecture.svg](diagrams/btp-architecture.svg). See [diagrams/README.md](diagrams/README.md) for the rendering workflow and the URLs of the embedded icons.
 
 ## 2.6 Role / Capability Matrix
 
-Authorization is layered. The service annotation `@requires` controls who can reach the service at all; per-entity `@restrict` rules then combine the caller's role with a `where` clause that pins each query to `Organizations.tenant_id = $user.tenant`.
+XSUAA issues a single scope `$XSAPPNAME.AuthenticatedUser`. The application-internal role (`company_advanced`, `company_user`, `end_user`) and the `tenant` attribute are resolved by the backend from the `Users` table at request time, then applied by CAP's `@restrict` rules combined with a `where` clause that pins each query to `Organizations.tenant_id = $user.tenant`.
 
-| Capability | admin | advanced | user | viewer | public (no auth) |
-|------------|-------|----------|------|--------|------------------|
-| Read tenant DPPs / Products / Batches / Items | yes | yes | yes | yes | — |
-| Create / update / delete master data | yes | yes | — | — | — |
-| Create / update ProductItems and DPPs | yes | yes | yes | — | — |
-| Approve / publish / archive DPP | yes | yes | — | — | — |
-| Manage Users | yes | — | — | — | — |
-| Excel import (Products / Batches / BOM) | yes | yes | — | — | — |
-| Excel / PDF export | yes | yes | yes | yes | — |
-| Read published, public-visible DPP via QR token | — | — | — | — | yes |
+| Capability | company_advanced | company_user | end_user | public (no auth) |
+|------------|------------------|--------------|----------|------------------|
+| Read tenant DPPs / Products / Batches / Items via DPPService | yes | yes | — | — |
+| Create / update / delete master data | yes | — | — | — |
+| Approve / publish / archive DPP | yes | — | — | — |
+| Manage Users | yes | — | — | — |
+| Excel import (Products / Batches / BOM) | yes | — | — | — |
+| Excel / PDF export | yes | yes | — | — |
+| Cross-tenant read-only via AuthorityService | — | — | yes | — |
+| Read published, public-visible DPP via QR token | — | — | — | yes |
 
 # 3. Endpoints
 
-| Method | Path | Auth | Purpose |
-|--------|------|------|---------|
-| GET | `/odata/v4/dpp/$metadata` | XSUAA | Service metadata |
-| GET / POST / PATCH / DELETE | `/odata/v4/dpp/<entity>` | XSUAA, role-restricted | CRUD on the 11 catalogue entities |
-| POST | `/odata/v4/dpp/DPPs(id)/DPPService.approveDPP` | admin/advanced | draft → approved (with validation) |
-| POST | `/odata/v4/dpp/DPPs(id)/DPPService.publishDPP` | admin/advanced | approved → published + snapshot + QR rotation |
-| POST | `/odata/v4/dpp/DPPs(id)/DPPService.archiveDPP` | admin/advanced | → archived |
-| POST | `/odata/v4/dpp/DPPs(id)/DPPService.regenerateQRToken` | admin/advanced | new HMAC token, previous → replaced |
-| GET | `/odata/v4/dpp/DPPs(id)/DPPService.generateQRCode` | all roles | Base64 PNG |
-| GET | `/odata/v4/dpp/DPPs(id)/DPPService.exportDPPasPDF` | all roles | DPP rendered as PDF |
-| GET | `/odata/v4/dpp/DPPs(id)/DPPService.generateQRLabel` | all roles | printable label PDF |
-| POST | `/odata/v4/dpp/importProducts` | admin/advanced | Excel XLSX UPSERT |
-| POST | `/odata/v4/dpp/importBatches` | admin/advanced | Excel XLSX UPSERT |
-| POST | `/odata/v4/dpp/importBOM` | admin/advanced | Excel XLSX UPSERT |
-| GET | `/odata/v4/dpp/downloadTemplate(template=...)` | all roles | XLSX template |
-| GET | `/odata/v4/dpp/exportProducts()` | all roles | XLSX export |
-| GET | `/odata/v4/dpp/exportBOM()` | all roles | XLSX export |
-| GET | `/odata/v4/dpp/exportDPP(dppId=...)` | all roles | single-DPP XLSX |
-| GET | `/odata/v4/dpp/exportDPPs(dppIds=...)` | all roles | bulk-DPP XLSX |
-| GET | `/odata/v4/dpp/exportTraceability()` | all roles | multi-sheet XLSX (Products→BOM) |
+| Method | Path | Required Role | Purpose |
+|--------|------|---------------|---------|
+| GET | `/odata/v4/dpp/$metadata` | any authenticated | Service metadata |
+| GET / POST / PATCH / DELETE | `/odata/v4/dpp/<entity>` | role-restricted | CRUD on the 11 catalogue entities |
+| POST | `/odata/v4/dpp/DPPs(id)/DPPService.approveDPP` | company_advanced | draft → approved (with validation) |
+| POST | `/odata/v4/dpp/DPPs(id)/DPPService.publishDPP` | company_advanced | approved → published + snapshot + QR rotation |
+| POST | `/odata/v4/dpp/DPPs(id)/DPPService.archiveDPP` | company_advanced | → archived |
+| POST | `/odata/v4/dpp/DPPs(id)/DPPService.regenerateQRToken` | company_advanced | new HMAC token, previous → replaced |
+| GET | `/odata/v4/dpp/DPPs(id)/DPPService.generateQRCode` | company_advanced | Base64 PNG |
+| GET | `/odata/v4/dpp/DPPs(id)/DPPService.exportDPPasPDF` | company_advanced | DPP rendered as PDF |
+| GET | `/odata/v4/dpp/DPPs(id)/DPPService.generateQRLabel` | company_advanced | printable label PDF |
+| POST | `/odata/v4/dpp/importProducts` | company_advanced | Excel XLSX UPSERT |
+| POST | `/odata/v4/dpp/importBatches` | company_advanced | Excel XLSX UPSERT |
+| POST | `/odata/v4/dpp/importBOM` | company_advanced | Excel XLSX UPSERT |
+| GET | `/odata/v4/dpp/downloadTemplate(template=...)` | company_advanced / company_user | XLSX template |
+| GET | `/odata/v4/dpp/exportProducts()` | company_advanced / company_user | XLSX export |
+| GET | `/odata/v4/dpp/exportBOM()` | company_advanced / company_user | XLSX export |
+| GET | `/odata/v4/dpp/exportDPP(dppId=...)` | company_advanced / company_user | single-DPP XLSX |
+| GET | `/odata/v4/dpp/exportDPPs(dppIds=...)` | company_advanced / company_user | bulk-DPP XLSX |
+| GET | `/odata/v4/dpp/exportTraceability()` | company_advanced / company_user | multi-sheet XLSX (Products→BOM) |
+| GET | `/odata/v4/authority/<entity>` | end_user | Cross-tenant read-only |
 | GET | `/public/dpp/:token` | none | Consumer DTO (JSON) |
 | GET | `/public/dpp/:token/qr.png` | none | printable QR PNG |
 | GET | `/$api-docs/odata/v4/dpp` | — | Swagger UI |
@@ -370,10 +375,10 @@ Basic-Auth, password `x`. Configured via `.cdsrc.json` under `requires.auth.[dev
 
 | User | Role | Tenant |
 |------|------|--------|
-| alice.admin | admin | ORG-A (Greenline) |
-| bob.advanced | advanced | ORG-A |
-| carol.user | user | ORG-A |
-| dave.viewer | viewer | ORG-A |
-| dan.advanced.b | advanced | ORG-B (Fashionista) |
+| alice.advanced | company_advanced | ORG-A (Greenline) |
+| carol.user | company_user | ORG-A |
+| dan.advanced.b | company_advanced | ORG-B (Fashionista) |
+| eve.enduser | end_user | — (cross-tenant via AuthorityService only) |
+| kka_learn_235 | company_advanced | ORG-A (BTP shared learn-tenant) |
 
-`alice.admin` / `bob.advanced` cover most scenarios. `dan.advanced.b` is used to verify tenant isolation between ORG-A and ORG-B.
+`alice.advanced` covers most company-internal scenarios. `dan.advanced.b` verifies tenant isolation between ORG-A and ORG-B. `eve.enduser` is required for `/odata/v4/authority`. `kka_learn_235` is provided for SAP BTP learn-tenant demos.

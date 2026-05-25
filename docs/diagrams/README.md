@@ -44,11 +44,28 @@ Output format follows the file extension (`.svg`, `.png`, `.pdf`).
 1. Open the file in any editor above
 2. *File → Export as → SVG / PNG / PDF*
 
-**Swap rectangles for official SAP BTP icons:**
-The current file uses styled rectangles with SAP-brand colours. To replace with the official SAP BTP icon set:
-1. Open [https://sap.github.io/btp-solution-diagrams/](https://sap.github.io/btp-solution-diagrams/) and download the stencil library
-2. In diagrams.net: *Extras → Edit Diagram → Edit Shape Library → Add new library from URL*
-3. Right-click each box → *Edit Style* → replace the `rounded=1;...` block with `shape=mxgraph.sap_btp.<icon_name>`
+**Official SAP BTP icons (already embedded):**
+
+The drawio file references the **official SAP BTP Solution Diagrams stencil set** by URL — when you open the file, the icons stream directly from <https://github.com/SAP/btp-solution-diagrams> (Apache-2.0 licensed):
+
+| BTP service | Icon file |
+|---|---|
+| Cloud Foundry Runtime | `10017-sap-btp_cloud-foundry-runtime_sd.svg` |
+| HANA Cloud | `20083-sap-hana-cloud_sd.svg` |
+| Authorization & Trust (XSUAA) | `31015-sap-authorization-and-trust-management-service_sd.svg` |
+| Destination Service (OOS) | `20080-sap-destination-service_sd.svg` |
+| Document Management (OOS) | `31027-sap-document-management-service_sd.svg` |
+| Alert Notification (OOS) | `31060-sap-alert-notification-service-for-sap-btp_sd.svg` |
+| Application Logging (OOS) | `20062-sap-application-logging-service-for-sap-btp_sd.svg` |
+
+To **edit the diagram with the full stencil library** (drag-and-drop new icons), load the official drawio library in diagrams.net:
+
+1. *Extras → Edit Diagram → Edit Shape Library*
+2. Add by URL — paste the raw URL of either:
+   - `https://raw.githubusercontent.com/SAP/btp-solution-diagrams/main/assets/shape-libraries-and-editable-presets/draw.io/20-02-99-sap-btp-service-icons-all/` (all BTP service icons)
+   - `https://raw.githubusercontent.com/SAP/btp-solution-diagrams/main/assets/shape-libraries-and-editable-presets/draw.io/20-03-generic-icons/sap-generic-icons-size-M-200302.xml` (generic users / devices / personas)
+
+The Application Router has no dedicated icon in the SAP catalogue (it is a Cloud Foundry sub-component) and is rendered as a coloured rectangle following SAP brand colours.
 
 ## File naming convention
 

@@ -10,72 +10,113 @@
         <mxCell id="title" value="DPP Capgemini — SAP BTP Architecture" style="text;html=1;fontSize=20;fontStyle=1;align=center;fontColor=#354A5F;" vertex="1" parent="1">
           <mxGeometry x="380" y="20" width="640" height="30" as="geometry" />
         </mxCell>
+        <mxCell id="subtitle" value="Icons: SAP BTP Solution Diagrams (github.com/SAP/btp-solution-diagrams) — Apache-2.0" style="text;html=1;fontSize=10;fontStyle=2;align=center;fontColor=#888;" vertex="1" parent="1">
+          <mxGeometry x="380" y="48" width="640" height="20" as="geometry" />
+        </mxCell>
 
         <!-- Client Tier -->
         <mxCell id="client-tier" value="Client Tier" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#999999;dashed=1;verticalAlign=top;align=left;fontStyle=1;fontColor=#666666;spacingLeft=10;spacingTop=4;" vertex="1" parent="1">
-          <mxGeometry x="60" y="70" width="1280" height="120" as="geometry" />
-        </mxCell>
-        <mxCell id="consumer" value="Consumer&#10;(Mobile Browser)&#10;via QR-Scan" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1976D2;fontColor=#0D47A1;fontSize=12;" vertex="1" parent="1">
-          <mxGeometry x="160" y="100" width="160" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="ui" value="SAPUI5 / Fiori Elements&#10;(TBD)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1976D2;fontColor=#0D47A1;fontSize=12;" vertex="1" parent="1">
-          <mxGeometry x="600" y="100" width="200" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="auditor" value="Auditor / Behörde&#10;(HTTP Client)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1976D2;fontColor=#0D47A1;fontSize=12;" vertex="1" parent="1">
-          <mxGeometry x="1060" y="100" width="180" height="70" as="geometry" />
+          <mxGeometry x="60" y="80" width="1280" height="140" as="geometry" />
         </mxCell>
 
-        <!-- BTP Cloud Foundry -->
-        <mxCell id="cf-tier" value="SAP BTP — Cloud Foundry Runtime" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F5F9FC;strokeColor=#0a6ed1;strokeWidth=2;verticalAlign=top;align=left;fontStyle=1;fontColor=#0a6ed1;fontSize=14;spacingLeft=14;spacingTop=8;" vertex="1" parent="1">
-          <mxGeometry x="60" y="220" width="1280" height="480" as="geometry" />
+        <mxCell id="consumer" value="Consumer&#10;(Mobile · QR-Scan)" style="shape=mxgraph.android.phone2;html=1;labelPosition=right;align=left;spacingLeft=14;verticalLabelPosition=middle;verticalAlign=middle;fontSize=12;strokeColor=#1976D2;fillColor=#E3F2FD;" vertex="1" parent="1">
+          <mxGeometry x="180" y="115" width="55" height="90" as="geometry" />
         </mxCell>
 
-        <!-- Approuter + XSUAA -->
+        <mxCell id="ui" value="SAPUI5 / Fiori Elements&#10;(TBD)" style="shape=mxgraph.gcp2.colored.windows;html=1;labelPosition=right;align=left;spacingLeft=14;verticalLabelPosition=middle;verticalAlign=middle;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="640" y="120" width="70" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="auditor" value="Auditor / Behörde&#10;(HTTP Client)" style="shape=mxgraph.gcp2.colored.user;html=1;labelPosition=right;align=left;spacingLeft=14;verticalLabelPosition=middle;verticalAlign=middle;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="1100" y="120" width="60" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- BTP Cloud Foundry Container -->
+        <mxCell id="cf-tier" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F5F9FC;strokeColor=#0a6ed1;strokeWidth=2;verticalAlign=top;align=left;spacingLeft=14;spacingTop=8;" vertex="1" parent="1">
+          <mxGeometry x="60" y="240" width="1280" height="480" as="geometry" />
+        </mxCell>
+
+        <!-- CF icon header -->
+        <mxCell id="cf-icon" value="" style="shape=image;html=1;verticalAlign=middle;aspect=fixed;image=https://raw.githubusercontent.com/SAP/btp-solution-diagrams/main/assets/shape-libraries-and-editable-presets/svg/10017-sap-btp_cloud-foundry-runtime_sd.svg;" vertex="1" parent="1">
+          <mxGeometry x="80" y="252" width="44" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="cf-label" value="SAP BTP — Cloud Foundry Runtime" style="text;html=1;fontSize=14;fontStyle=1;fontColor=#0a6ed1;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="130" y="258" width="400" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- Application Router (no dedicated icon, render as rounded rect) -->
         <mxCell id="approuter" value="Application Router&#10;(approuter)&#10;Static UI + JWT termination" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#00C19E;strokeColor=#008F77;fontColor=#FFFFFF;fontSize=12;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="260" y="270" width="220" height="90" as="geometry" />
-        </mxCell>
-        <mxCell id="xsuaa" value="XSUAA&#10;Authorization &amp; Trust&#10;Management&#10;(OAuth2 / JWT)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#BB0000;strokeColor=#880000;fontColor=#FFFFFF;fontSize=12;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="540" y="270" width="200" height="90" as="geometry" />
+          <mxGeometry x="290" y="320" width="220" height="80" as="geometry" />
         </mxCell>
 
-        <!-- App Service Container -->
+        <!-- XSUAA (official icon) -->
+        <mxCell id="xsuaa-icon" value="" style="shape=image;html=1;verticalAlign=middle;aspect=fixed;image=https://raw.githubusercontent.com/SAP/btp-solution-diagrams/main/assets/shape-libraries-and-editable-presets/svg/31015-sap-authorization-and-trust-management-service_sd.svg;" vertex="1" parent="1">
+          <mxGeometry x="600" y="324" width="64" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="xsuaa-label" value="Authorization &amp; Trust&#10;Management (XSUAA)&#10;OAuth2 / JWT" style="text;html=1;fontSize=11;fontColor=#333333;align=left;verticalAlign=middle;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="670" y="324" width="200" height="64" as="geometry" />
+        </mxCell>
+
+        <!-- App service container -->
         <mxCell id="srv-container" value="dpp-capgemini-srv  (Node.js · SAP CAP)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#0a6ed1;dashed=0;verticalAlign=top;align=left;fontStyle=1;fontColor=#0a6ed1;fontSize=13;spacingLeft=14;spacingTop=6;" vertex="1" parent="1">
-          <mxGeometry x="160" y="400" width="1080" height="240" as="geometry" />
+          <mxGeometry x="180" y="420" width="1080" height="240" as="geometry" />
         </mxCell>
 
         <mxCell id="odata" value="DPPService — OData V4&#10;/odata/v4/dpp&#10;&#10;• 11 entity projections&#10;• 4 bound actions on DPPs&#10;• 3 bound functions on DPPs&#10;• 3 import actions, 6 export functions" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0a6ed1;strokeColor=#0854A0;fontColor=#FFFFFF;fontSize=11;align=left;spacingLeft=12;spacingTop=4;" vertex="1" parent="1">
-          <mxGeometry x="200" y="440" width="320" height="140" as="geometry" />
+          <mxGeometry x="220" y="460" width="320" height="140" as="geometry" />
         </mxCell>
 
         <mxCell id="rest" value="Public REST&#10;&#10;• GET /public/dpp/:token&#10;• GET /public/dpp/:token/qr.png&#10;• GET /healthz&#10;• GET /$api-docs/* (Swagger UI)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0854A0;strokeColor=#063878;fontColor=#FFFFFF;fontSize=11;align=left;spacingLeft=12;spacingTop=4;" vertex="1" parent="1">
-          <mxGeometry x="560" y="440" width="280" height="140" as="geometry" />
+          <mxGeometry x="560" y="460" width="280" height="140" as="geometry" />
         </mxCell>
 
         <mxCell id="handlers" value="Handler Layer&#10;&#10;product · dpp · import&#10;export · pdf · public" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#7B1FA2;strokeColor=#4A148C;fontColor=#FFFFFF;fontSize=11;align=left;spacingLeft=12;spacingTop=4;" vertex="1" parent="1">
-          <mxGeometry x="880" y="440" width="320" height="65" as="geometry" />
+          <mxGeometry x="880" y="460" width="320" height="65" as="geometry" />
         </mxCell>
 
         <mxCell id="libs" value="Lib Layer&#10;&#10;token · excel-templates · pdf-renderer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#C2185B;strokeColor=#880E4F;fontColor=#FFFFFF;fontSize=11;align=left;spacingLeft=12;spacingTop=4;" vertex="1" parent="1">
-          <mxGeometry x="880" y="515" width="320" height="65" as="geometry" />
+          <mxGeometry x="880" y="535" width="320" height="65" as="geometry" />
         </mxCell>
 
-        <!-- HANA Cloud -->
-        <mxCell id="hana" value="SAP HANA Cloud&#10;(HDI Container)&#10;11 catalogue tables" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#FF8200;strokeColor=#CC6800;fontColor=#FFFFFF;fontSize=13;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="600" y="740" width="200" height="120" as="geometry" />
+        <!-- HANA Cloud (official icon) -->
+        <mxCell id="hana-icon" value="" style="shape=image;html=1;verticalAlign=middle;aspect=fixed;image=https://raw.githubusercontent.com/SAP/btp-solution-diagrams/main/assets/shape-libraries-and-editable-presets/svg/20083-sap-hana-cloud_sd.svg;" vertex="1" parent="1">
+          <mxGeometry x="640" y="740" width="72" height="72" as="geometry" />
+        </mxCell>
+        <mxCell id="hana-label" value="SAP HANA Cloud&#10;HDI Container · 11 catalogue tables" style="text;html=1;fontSize=12;fontStyle=1;fontColor=#333333;align=center;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="540" y="815" width="280" height="40" as="geometry" />
         </mxCell>
 
-        <!-- Out-of-scope BTP services (faded) -->
-        <mxCell id="oos-tier" value="Out-of-Scope MVP" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FAFAFA;strokeColor=#CCCCCC;dashed=1;verticalAlign=top;align=left;fontStyle=2;fontColor=#999999;spacingLeft=10;spacingTop=4;fontSize=11;" vertex="1" parent="1">
-          <mxGeometry x="60" y="740" width="500" height="120" as="geometry" />
+        <!-- Out-of-scope tier -->
+        <mxCell id="oos-tier" value="Out-of-Scope MVP (future BTP services)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FAFAFA;strokeColor=#CCCCCC;dashed=1;verticalAlign=top;align=left;fontStyle=2;fontColor=#999999;spacingLeft=10;spacingTop=4;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="60" y="730" width="450" height="140" as="geometry" />
         </mxCell>
-        <mxCell id="oos1" value="Destination Service&#10;(ERP / S/4HANA)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#CCCCCC;fontColor=#999999;fontSize=10;dashed=1;" vertex="1" parent="1">
-          <mxGeometry x="80" y="770" width="140" height="60" as="geometry" />
+
+        <mxCell id="oos-dest-icon" value="" style="shape=image;html=1;verticalAlign=middle;aspect=fixed;image=https://raw.githubusercontent.com/SAP/btp-solution-diagrams/main/assets/shape-libraries-and-editable-presets/svg/20080-sap-destination-service_sd.svg;opacity=60;" vertex="1" parent="1">
+          <mxGeometry x="80" y="760" width="44" height="44" as="geometry" />
         </mxCell>
-        <mxCell id="oos2" value="Document Mgmt&#10;Service" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#CCCCCC;fontColor=#999999;fontSize=10;dashed=1;" vertex="1" parent="1">
-          <mxGeometry x="240" y="770" width="140" height="60" as="geometry" />
+        <mxCell id="oos-dest-lbl" value="Destination&#10;(ERP / S/4HANA)" style="text;html=1;fontSize=9;fontColor=#999;align=center;" vertex="1" parent="1">
+          <mxGeometry x="65" y="808" width="80" height="30" as="geometry" />
         </mxCell>
-        <mxCell id="oos3" value="Alert Notification&#10;App Logging" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#CCCCCC;fontColor=#999999;fontSize=10;dashed=1;" vertex="1" parent="1">
-          <mxGeometry x="400" y="770" width="140" height="60" as="geometry" />
+
+        <mxCell id="oos-doc-icon" value="" style="shape=image;html=1;verticalAlign=middle;aspect=fixed;image=https://raw.githubusercontent.com/SAP/btp-solution-diagrams/main/assets/shape-libraries-and-editable-presets/svg/31027-sap-document-management-service_sd.svg;opacity=60;" vertex="1" parent="1">
+          <mxGeometry x="180" y="760" width="44" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="oos-doc-lbl" value="Document&#10;Management" style="text;html=1;fontSize=9;fontColor=#999;align=center;" vertex="1" parent="1">
+          <mxGeometry x="165" y="808" width="80" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="oos-alert-icon" value="" style="shape=image;html=1;verticalAlign=middle;aspect=fixed;image=https://raw.githubusercontent.com/SAP/btp-solution-diagrams/main/assets/shape-libraries-and-editable-presets/svg/31060-sap-alert-notification-service-for-sap-btp_sd.svg;opacity=60;" vertex="1" parent="1">
+          <mxGeometry x="280" y="760" width="44" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="oos-alert-lbl" value="Alert&#10;Notification" style="text;html=1;fontSize=9;fontColor=#999;align=center;" vertex="1" parent="1">
+          <mxGeometry x="265" y="808" width="80" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="oos-log-icon" value="" style="shape=image;html=1;verticalAlign=middle;aspect=fixed;image=https://raw.githubusercontent.com/SAP/btp-solution-diagrams/main/assets/shape-libraries-and-editable-presets/svg/20062-sap-application-logging-service-for-sap-btp_sd.svg;opacity=60;" vertex="1" parent="1">
+          <mxGeometry x="380" y="760" width="44" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="oos-log-lbl" value="Application&#10;Logging" style="text;html=1;fontSize=9;fontColor=#999;align=center;" vertex="1" parent="1">
+          <mxGeometry x="365" y="808" width="80" height="30" as="geometry" />
         </mxCell>
 
         <!-- Edges -->
@@ -88,11 +129,11 @@
         <mxCell id="e3" value="HTTPS&#10;(no auth)" style="endArrow=classic;html=1;rounded=0;strokeColor=#388E3C;strokeWidth=2;fontSize=10;" edge="1" parent="1" source="consumer" target="rest">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="240" y="420" />
+              <mxPoint x="220" y="430" />
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e4" value="verify JWT" style="endArrow=classic;html=1;rounded=0;dashed=1;strokeColor=#BB0000;fontSize=10;" edge="1" parent="1" source="approuter" target="xsuaa">
+        <mxCell id="e4" value="verify JWT" style="endArrow=classic;html=1;rounded=0;dashed=1;strokeColor=#BB0000;fontSize=10;" edge="1" parent="1" source="approuter" target="xsuaa-icon">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="e5" value="forward + tenant attr" style="endArrow=classic;html=1;rounded=0;strokeColor=#0a6ed1;strokeWidth=2;fontSize=10;" edge="1" parent="1" source="approuter" target="odata">
@@ -107,31 +148,34 @@
         <mxCell id="e8" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1" source="handlers" target="libs">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e9" value="HDI / CDS query" style="endArrow=classic;html=1;rounded=0;strokeColor=#FF8200;strokeWidth=2;fontSize=10;" edge="1" parent="1" source="srv-container" target="hana">
+        <mxCell id="e9" value="HDI / CDS query" style="endArrow=classic;html=1;rounded=0;strokeColor=#FF8200;strokeWidth=2;fontSize=10;" edge="1" parent="1" source="srv-container" target="hana-icon">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
 
         <!-- Legend -->
+        <mxCell id="legend-box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#CCCCCC;" vertex="1" parent="1">
+          <mxGeometry x="1180" y="740" width="170" height="130" as="geometry" />
+        </mxCell>
         <mxCell id="legend-title" value="Legend" style="text;html=1;fontSize=11;fontStyle=1;align=left;fontColor=#666;" vertex="1" parent="1">
-          <mxGeometry x="1060" y="745" width="80" height="20" as="geometry" />
+          <mxGeometry x="1190" y="745" width="80" height="20" as="geometry" />
         </mxCell>
-        <mxCell id="legend1" value="BTP Service" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0a6ed1;strokeColor=#0854A0;fontColor=#FFFFFF;fontSize=10;" vertex="1" parent="1">
-          <mxGeometry x="1060" y="770" width="90" height="20" as="geometry" />
+        <mxCell id="legend1" value="Official BTP icon" style="shape=image;html=1;verticalLabelPosition=middle;labelPosition=right;verticalAlign=middle;align=left;spacingLeft=8;aspect=fixed;fontSize=10;image=https://raw.githubusercontent.com/SAP/btp-solution-diagrams/main/assets/shape-libraries-and-editable-presets/svg/20083-sap-hana-cloud_sd.svg;" vertex="1" parent="1">
+          <mxGeometry x="1190" y="770" width="22" height="22" as="geometry" />
         </mxCell>
-        <mxCell id="legend2" value="App Component" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#7B1FA2;strokeColor=#4A148C;fontColor=#FFFFFF;fontSize=10;" vertex="1" parent="1">
-          <mxGeometry x="1060" y="795" width="90" height="20" as="geometry" />
+        <mxCell id="legend2" value="In-house module" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#7B1FA2;strokeColor=#4A148C;fontColor=#FFFFFF;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="1190" y="800" width="160" height="20" as="geometry" />
         </mxCell>
-        <mxCell id="legend3" value="Persistence" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#FF8200;strokeColor=#CC6800;fontColor=#FFFFFF;fontSize=10;" vertex="1" parent="1">
-          <mxGeometry x="1060" y="820" width="90" height="25" as="geometry" />
+        <mxCell id="legend3" value="HTTPS + JWT" style="endArrow=classic;html=1;strokeColor=#1976D2;strokeWidth=2;fontSize=9;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1190" y="833" as="sourcePoint" />
+            <mxPoint x="1340" y="833" as="targetPoint" />
+          </mxGeometry>
         </mxCell>
-        <mxCell id="legend4" value="Client" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1976D2;fontColor=#0D47A1;fontSize=10;" vertex="1" parent="1">
-          <mxGeometry x="1170" y="770" width="90" height="20" as="geometry" />
-        </mxCell>
-        <mxCell id="legend5" value="Auth" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#BB0000;strokeColor=#880000;fontColor=#FFFFFF;fontSize=10;" vertex="1" parent="1">
-          <mxGeometry x="1170" y="795" width="90" height="20" as="geometry" />
-        </mxCell>
-        <mxCell id="legend6" value="Approuter" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#00C19E;strokeColor=#008F77;fontColor=#FFFFFF;fontSize=10;" vertex="1" parent="1">
-          <mxGeometry x="1170" y="820" width="90" height="20" as="geometry" />
+        <mxCell id="legend4" value="HTTPS (no auth)" style="endArrow=classic;html=1;strokeColor=#388E3C;strokeWidth=2;fontSize=9;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1190" y="853" as="sourcePoint" />
+            <mxPoint x="1340" y="853" as="targetPoint" />
+          </mxGeometry>
         </mxCell>
 
       </root>

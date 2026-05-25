@@ -3,7 +3,7 @@
 const cds = require('@sap/cds');
 const { POST, GET, expect } = cds.test().in(__dirname + '/../..');
 
-const aliceAdmin = { auth: { username: 'alice.admin', password: 'x' } };
+const aliceAdmin = { auth: { username: 'alice.advanced', password: 'x' } };
 
 describe('QR Code lifecycle (regenerate + history)', () => {
   test('regenerateQRToken mints a new QR and marks previous as replaced', async () => {

@@ -25,10 +25,8 @@ modules:
     build-parameters:
       builder: npm-ci
     properties:
-      # Demo bypass: any authenticated SSO user becomes admin/tenant=ORG-A.
-      # Remove this once real XSUAA role-collection assignments are in place
-      # (or set DEMO_MODE=false to disable without redeploy).
-      DEMO_MODE: 'true'
+      # Role + tenant are resolved by the backend from the `Users` table,
+      # keyed off the XSUAA user id. No DEMO_MODE flag needed any more.
       QR_TOKEN_HMAC_SECRET: 'btp-demo-token-secret-replace-before-prod'
       PUBLIC_BASE_URL: 'https://cf-procode-bas-dev-dpp-approuter.cfapps.eu10-004.hana.ondemand.com'
     requires:

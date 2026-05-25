@@ -6,7 +6,11 @@ Versioned alongside the code. Diagram sources live in [docs/diagrams/](diagrams/
 
 ## 1. BTP Architecture
 
-Deployment topology on SAP Business Technology Platform. See [diagrams/btp-architecture.drawio](diagrams/btp-architecture.drawio) for the editable diagram (open in [diagrams.net](https://app.diagrams.net) or VS Code with the *Draw.io Integration* extension).
+Deployment topology on SAP Business Technology Platform. The diagram embeds the official SAP BTP Solution Diagrams icons (Apache-2.0, <https://github.com/SAP/btp-solution-diagrams>).
+
+![BTP architecture](diagrams/btp-architecture.png)
+
+Editable source: [diagrams/btp-architecture.drawio](diagrams/btp-architecture.drawio) · SVG export: [diagrams/btp-architecture.svg](diagrams/btp-architecture.svg)
 
 ### BTP services in use
 
@@ -14,33 +18,11 @@ Deployment topology on SAP Business Technology Platform. See [diagrams/btp-archi
 |---|---|---|
 | **SAP HANA Cloud** | Persistent store for all 11 entities via HDI container | ✅ via `@cap-js/hana` |
 | **Cloud Foundry Runtime** | Hosts the `dpp-capgemini-srv` Node.js app | ✅ deployable via `mta.yaml` |
-| **XSUAA** | OAuth2/JWT issuer; tenant isolation via `attr.tenant` | ✅ via `xs-security.json` |
+| **XSUAA** | OAuth2/JWT issuer; issues a single `AuthenticatedUser` scope. Role + tenant are resolved app-internally from the `Users` table. | ✅ via `xs-security.json` |
 | **Application Router** | XSUAA token termination + static UI serving | ✅ enabled in production profile |
 | Destination Service | ERP / S/4HANA integration | ⛔ Out-of-Scope MVP |
 | Document Management Service | Compliance document storage | ⛔ Sprint 2+ |
 | Alert Notification, App Logging | Ops monitoring | ⛔ Sprint 2+ |
-
-### Topology
-
-```
-Consumer / UI / Auditor
-        │
-        ▼
-┌────────────────────────────────────────────────┐
-│  SAP BTP — Cloud Foundry Runtime                │
-│                                                  │
-│   Approuter ──verify JWT── XSUAA                │
-│        │                                          │
-│        ▼                                          │
-│   dpp-capgemini-srv  (Node.js · CAP)             │
-│    • OData V4  /odata/v4/dpp                     │
-│    • Public REST /public/dpp/:token              │
-│    • Handlers · Libs                              │
-│        │                                          │
-│        ▼ HDI                                      │
-│   SAP HANA Cloud  ─ 11 tables                    │
-└────────────────────────────────────────────────┘
-```
 
 ---
 
@@ -129,22 +111,23 @@ Source: [diagrams/software-architecture.mmd](diagrams/software-architecture.mmd)
 | Path | Verb | Function | Auth |
 |---|---|---|---|
 | `/odata/v4/dpp` | GET/POST/PATCH/DELETE | 11 entity projections | XSUAA scope |
-| `/odata/v4/dpp/DPPs(id)/DPPService.approveDPP` | POST | draft → approved | admin/advanced |
-| `/odata/v4/dpp/DPPs(id)/DPPService.publishDPP` | POST | approved → published + Snapshot + QR | admin/advanced |
-| `/odata/v4/dpp/DPPs(id)/DPPService.archiveDPP` | POST | → archived | admin/advanced |
-| `/odata/v4/dpp/DPPs(id)/DPPService.regenerateQRToken` | POST | new HMAC token | admin/advanced |
-| `/odata/v4/dpp/DPPs(id)/DPPService.generateQRCode` | GET | Base64-PNG inline | all roles |
-| `/odata/v4/dpp/DPPs(id)/DPPService.exportDPPasPDF` | GET | PDF | all roles |
-| `/odata/v4/dpp/DPPs(id)/DPPService.generateQRLabel` | GET | printable label PDF | all roles |
-| `/odata/v4/dpp/importProducts` | POST | Excel UPSERT | admin/advanced |
-| `/odata/v4/dpp/importBatches` | POST | Excel UPSERT | admin/advanced |
-| `/odata/v4/dpp/importBOM` | POST | Excel UPSERT | admin/advanced |
-| `/odata/v4/dpp/downloadTemplate(template=...)` | GET | XLSX template | all roles |
-| `/odata/v4/dpp/exportProducts()` | GET | XLSX export | all roles |
-| `/odata/v4/dpp/exportBOM()` | GET | XLSX export | all roles |
-| `/odata/v4/dpp/exportDPP(dppId=...)` | GET | single DPP XLSX | all roles |
-| `/odata/v4/dpp/exportDPPs(dppIds=...)` | GET | bulk DPP XLSX | all roles |
-| `/odata/v4/dpp/exportTraceability()` | GET | multi-sheet XLSX | all roles |
+| `/odata/v4/dpp/DPPs(id)/DPPService.approveDPP` | POST | draft → approved | company_advanced |
+| `/odata/v4/dpp/DPPs(id)/DPPService.publishDPP` | POST | approved → published + Snapshot + QR | company_advanced |
+| `/odata/v4/dpp/DPPs(id)/DPPService.archiveDPP` | POST | → archived | company_advanced |
+| `/odata/v4/dpp/DPPs(id)/DPPService.regenerateQRToken` | POST | new HMAC token | company_advanced |
+| `/odata/v4/dpp/DPPs(id)/DPPService.generateQRCode` | GET | Base64-PNG inline | company_advanced |
+| `/odata/v4/dpp/DPPs(id)/DPPService.exportDPPasPDF` | GET | PDF | company_advanced |
+| `/odata/v4/dpp/DPPs(id)/DPPService.generateQRLabel` | GET | printable label PDF | company_advanced |
+| `/odata/v4/dpp/importProducts` | POST | Excel UPSERT | company_advanced |
+| `/odata/v4/dpp/importBatches` | POST | Excel UPSERT | company_advanced |
+| `/odata/v4/dpp/importBOM` | POST | Excel UPSERT | company_advanced |
+| `/odata/v4/dpp/downloadTemplate(template=...)` | GET | XLSX template | company_advanced / company_user |
+| `/odata/v4/dpp/exportProducts()` | GET | XLSX export | company_advanced / company_user |
+| `/odata/v4/dpp/exportBOM()` | GET | XLSX export | company_advanced / company_user |
+| `/odata/v4/dpp/exportDPP(dppId=...)` | GET | single DPP XLSX | company_advanced / company_user |
+| `/odata/v4/dpp/exportDPPs(dppIds=...)` | GET | bulk DPP XLSX | company_advanced / company_user |
+| `/odata/v4/dpp/exportTraceability()` | GET | multi-sheet XLSX | company_advanced / company_user |
+| `/odata/v4/authority/<entity>` | GET | Cross-tenant read-only | end_user |
 | `/public/dpp/:token` | GET | consumer DTO (JSON) | none |
 | `/public/dpp/:token/qr.png` | GET | QR PNG | none |
 | `/healthz` | GET | health check | none |
@@ -254,7 +237,7 @@ Cardinalities — cross-referenced with the official Field Catalogue (`Fashion_D
 | email | String(254) | NVARCHAR(254) | NOT NULL; UNIQUE per organization |
 | display_name | String(120) | NVARCHAR(120) | |
 | organization_ID | String(36) | NVARCHAR(36) | NOT NULL, FK → ORGANIZATIONS |
-| role | String(12) | NVARCHAR(12) | NOT NULL — enum admin/advanced/user/viewer |
+| role | String(20) | NVARCHAR(20) | NOT NULL — enum company_advanced/company_user/end_user |
 | external_user_id | String(120) | NVARCHAR(120) | IdP mapping |
 | active | Boolean | BOOLEAN | DEFAULT TRUE |
 
