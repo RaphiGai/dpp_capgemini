@@ -3,6 +3,31 @@
 const cds = require('@sap/cds');
 const publicHandler = require('./handlers/public-handler');
 
+/**
+ * DEMO_MODE: when env DEMO_MODE=true, every authenticated request is granted
+ * the full set of DPP roles and a default tenant attribute (ORG-A). Used to
+ * unblock BTP demos on shared learn-tenants where the developer cannot
+ * assign role collections in the cockpit. Switch off by removing the env
+ * (e.g. once real XSUAA role assignments are in place).
+ */
+function demoModeBypass(req, _res, next) {
+  if (process.env.DEMO_MODE !== 'true') return next();
+  if (req.user) {
+    req.user._roles = { admin: 1, advanced: 1, user: 1, viewer: 1, authority: 1 };
+    req.user.is = () => true;
+    req.user.attr = req.user.attr || {};
+    if (!req.user.attr.tenant) req.user.attr.tenant = 'ORG-A';
+  }
+  next();
+}
+
+// Inject into CAP's middleware chain so it runs AFTER auth + ctx_user populated
+// req.user, but BEFORE service dispatch (which is where @restrict gets evaluated).
+if (process.env.DEMO_MODE === 'true' && cds.middlewares && Array.isArray(cds.middlewares.before)) {
+  cds.middlewares.before.push(demoModeBypass);
+  console.warn('[DEMO_MODE] every authenticated request gets full admin rights and tenant=ORG-A');
+}
+
 // Swagger UI is loaded lazily so test environments without the dev-only
 // dependency installed can still boot.
 let swaggerUi = null;
