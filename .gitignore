@@ -32,7 +32,6 @@ Thumbs.db
 
 # Build artifacts
 mta_archives/
-*.mtar
 coverage/
 .nyc_output/
 .cf/
