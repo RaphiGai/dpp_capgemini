@@ -3,40 +3,31 @@ using { dpp as db } from '../db/schema';
 /**
  * DPPService — primary OData V4 service for company users.
  *
- * NOTE (May 2026): role-based @restrict clauses temporarily relaxed to
- * `authenticated-user` because BTP role-collection assignment is blocked on
- * the UCC learn-tenant and the CAP 9 middleware hooks don't reliably let us
- * resolve roles from the DB before @restrict evaluation. Once the UCC team
- * assigns the proper role collections (or we move to a sub-account where we
- * have admin rights), the previous restrict clauses come back. They are
- * preserved in git history.
+ * NOTE (May 2026): Authorization is enforced programmatically in the service
+ * handlers (`srv/dpp-service.js` + `srv/handlers/auth-helpers.js`), NOT via
+ * `@restrict`. The service-level `requires: 'authenticated-user'` is only the
+ * "logged-in yes/no" gate; the actual app role (`company_advanced` /
+ * `company_user`) and the tenant scoping are resolved from the DB Users table
+ * and applied in `srv.before(*)` handlers. This sidesteps a CAP 9 middleware-
+ * timing issue where app-resolved roles arrived too late for `@restrict`.
  */
 service DPPService @(
   path     : '/odata/v4/dpp',
   requires : 'authenticated-user'
 ) {
 
-  type FileEnvelope : {
-    filename       : String;
-    content_base64 : LargeString;
-  };
-
   type QRCodeImage : {
     png     : LargeString;
     payload : String;
   };
 
-  type ImportError : {
-    row     : Integer;
-    field   : String;
-    message : String;
-  };
-
-  type ImportReport : {
-    total    : Integer;
-    imported : Integer;
-    rejected : Integer;
-    errors   : array of ImportError;
+  type MeInfo : {
+    id             : String;
+    displayName    : String;
+    email          : String;
+    role           : String;
+    organizationId : String;
+    tenantId       : String;
   };
 
   entity Organizations         as projection on db.Organizations;
@@ -68,21 +59,9 @@ service DPPService @(
     action   regenerateQRToken()                     returns DPPs;
 
     function generateQRCode()                        returns QRCodeImage;
-    function exportDPPasPDF()                        returns FileEnvelope;
-    function generateQRLabel()                       returns FileEnvelope;
   };
 
   entity QRCodes               as projection on db.QRCodes;
 
-  // ---- Data import & export ----
-  action importProducts(file : LargeString) returns ImportReport;
-  action importBatches(file : LargeString)  returns ImportReport;
-  action importBOM(file : LargeString)      returns ImportReport;
-
-  function downloadTemplate(template : String) returns FileEnvelope;
-  function exportProducts()                     returns FileEnvelope;
-  function exportBOM()                          returns FileEnvelope;
-  function exportDPP(dppId : String)            returns FileEnvelope;
-  function exportDPPs(dppIds : String)          returns FileEnvelope;
-  function exportTraceability()                 returns FileEnvelope;
+  function me() returns MeInfo;
 }
