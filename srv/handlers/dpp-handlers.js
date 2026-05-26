@@ -3,6 +3,9 @@
 const cds = require('@sap/cds');
 const { randomUUID } = require('crypto');
 const tokens = require('../lib/token');
+const { requireOwningOrg } = require('./auth-helpers');
+
+const DPP_OWNER_PATH = 'product.owning_organization_ID';
 
 /**
  * Mandatory-field check used by approveDPP/publishDPP. Returns an array of
@@ -98,7 +101,10 @@ module.exports = (srv) => {
 
   // ----- Defaults on CREATE -----
 
-  srv.before('CREATE', DPPs, (req) => {
+  srv.before('CREATE', DPPs, async (req) => {
+    if (req.data.product_ID) {
+      await requireOwningOrg(req, 'Products', req.data.product_ID);
+    }
     if (!req.data.status) req.data.status = 'draft';
     if (!req.data.visibility) req.data.visibility = 'internal';
     if (!req.data.granularity) req.data.granularity = req.data.item_ID ? 'item' : 'model';
@@ -125,6 +131,7 @@ module.exports = (srv) => {
 
   srv.on('approveDPP', DPPs, async (req) => {
     const id = req.params[req.params.length - 1].ID;
+    await requireOwningOrg(req, 'DPPs', id, DPP_OWNER_PATH);
     const dpp = await SELECT.one.from(DPPs).where({ ID: id });
     if (!dpp) req.reject(404, `DPP '${id}' not found.`);
 
@@ -145,6 +152,7 @@ module.exports = (srv) => {
 
   srv.on('publishDPP', DPPs, async (req) => {
     const id = req.params[req.params.length - 1].ID;
+    await requireOwningOrg(req, 'DPPs', id, DPP_OWNER_PATH);
     const dpp = await SELECT.one.from(DPPs).where({ ID: id });
     if (!dpp) req.reject(404, `DPP '${id}' not found.`);
     if (dpp.status === 'archived') req.reject(400, `DPP '${id}' is archived and cannot be published.`);
@@ -185,6 +193,7 @@ module.exports = (srv) => {
 
   srv.on('archiveDPP', DPPs, async (req) => {
     const id = req.params[req.params.length - 1].ID;
+    await requireOwningOrg(req, 'DPPs', id, DPP_OWNER_PATH);
     const dpp = await SELECT.one.from(DPPs).where({ ID: id });
     if (!dpp) req.reject(404, `DPP '${id}' not found.`);
 
@@ -199,6 +208,7 @@ module.exports = (srv) => {
 
   srv.on('regenerateQRToken', DPPs, async (req) => {
     const id = req.params[req.params.length - 1].ID;
+    await requireOwningOrg(req, 'DPPs', id, DPP_OWNER_PATH);
     const dpp = await SELECT.one.from(DPPs).where({ ID: id });
     if (!dpp) req.reject(404, `DPP '${id}' not found.`);
 
@@ -218,6 +228,7 @@ module.exports = (srv) => {
 
   srv.on('generateQRCode', DPPs, async (req) => {
     const id = req.params[req.params.length - 1].ID;
+    await requireOwningOrg(req, 'DPPs', id, DPP_OWNER_PATH);
     const dpp = await SELECT.one.from(DPPs).where({ ID: id });
     if (!dpp) req.reject(404, `DPP '${id}' not found.`);
     if (!dpp.qr_token) req.reject(409, `DPP '${id}' has no QR token. Publish it first.`);

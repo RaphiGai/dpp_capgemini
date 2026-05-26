@@ -1,6 +1,7 @@
 ID;email;display_name;organization_ID;role;external_user_id;active
-usr-kka;kka_learn_235@capgemini.com;Capgemini Trainee (Bootstrap Admin);org-greenline;company_advanced;kka_learn_235;true
+usr-kaa-235;kaa_learn_235@example.com;BTP Bootstrap Admin (235);org-greenline;company_advanced;kaa_learn_235;true
+usr-kaa-234;kaa_learn_234@example.com;BTP Admin (234);org-greenline;company_advanced;kaa_learn_234;true
+usr-kaa-248;kaa_learn_248@example.com;BTP Admin (248);org-greenline;company_advanced;kaa_learn_248;true
 usr-alice;alice.advanced@greenline.example;Alice Advanced;org-greenline;company_advanced;alice.advanced;true
 usr-carol;carol.user@greenline.example;Carol User;org-greenline;company_user;carol.user;true
 usr-dan;dan.advanced.b@fashionista.example;Dan Advanced;org-fashionista;company_advanced;dan.advanced.b;true
-usr-eve;eve.enduser@external.example;Eve External (Authority/Consumer);org-greenline;end_user;eve.enduser;true

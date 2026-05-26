@@ -1,7 +1,13 @@
 'use strict';
 
 const cds = require('@sap/cds');
-const { getUserOrg } = require('./auth-helpers');
+const { getUserOrg, requireOwningOrg } = require('./auth-helpers');
+
+function rejectCrossOrgWrite(req, fieldValue, callerOrgId) {
+  if (fieldValue !== undefined && fieldValue !== callerOrgId) {
+    req.reject(403, 'Cannot assign records to a different organization.');
+  }
+}
 
 /**
  * Walk the BOM graph downward from `startId`: is `targetId` reachable as a
@@ -29,22 +35,28 @@ module.exports = (srv) => {
     ProductBOMs, BusinessPartners
   } = srv.entities;
 
-  // ----- Tenant defaulting on CREATE -----
+  // ----- Tenant defaulting on CREATE + tenant guard on UPDATE -----
 
   srv.before('CREATE', Products, async (req) => {
-    if (!req.data.owning_organization_ID) {
-      const org = await getUserOrg(req);
-      req.data.owning_organization_ID = org.ID;
-    }
+    const org = await getUserOrg(req);
+    rejectCrossOrgWrite(req, req.data.owning_organization_ID, org.ID);
+    if (!req.data.owning_organization_ID) req.data.owning_organization_ID = org.ID;
     if (!req.data.product_type) req.data.product_type = 'finished';
     if (!req.data.status) req.data.status = 'draft';
   });
 
+  srv.before('UPDATE', Products, async (req) => {
+    rejectCrossOrgWrite(req, req.data.owning_organization_ID, req.user._appOrgId);
+  });
+
   srv.before('CREATE', BusinessPartners, async (req) => {
-    if (!req.data.owning_organization_ID) {
-      const org = await getUserOrg(req);
-      req.data.owning_organization_ID = org.ID;
-    }
+    const org = await getUserOrg(req);
+    rejectCrossOrgWrite(req, req.data.owning_organization_ID, org.ID);
+    if (!req.data.owning_organization_ID) req.data.owning_organization_ID = org.ID;
+  });
+
+  srv.before('UPDATE', BusinessPartners, async (req) => {
+    rejectCrossOrgWrite(req, req.data.owning_organization_ID, req.user._appOrgId);
   });
 
   // ----- Status defaults for hierarchy entities -----
@@ -62,6 +74,10 @@ module.exports = (srv) => {
 
   srv.before(['CREATE', 'UPDATE'], ProductBOMs, async (req) => {
     const { parent_ID, component_ID, quantity, unit } = req.data;
+
+    if (parent_ID) {
+      await requireOwningOrg(req, 'Products', parent_ID);
+    }
 
     if (parent_ID && component_ID && parent_ID === component_ID) {
       req.reject(400, 'A product cannot reference itself as a component.');
@@ -87,8 +103,7 @@ module.exports = (srv) => {
 
   srv.on('archiveProduct', Products, async (req) => {
     const id = req.params[req.params.length - 1].ID;
-    const product = await SELECT.one.from(Products).where({ ID: id });
-    if (!product) req.reject(404, `Product '${id}' not found.`);
+    await requireOwningOrg(req, 'Products', id);
 
     await UPDATE(Products)
       .set({ status: 'archived' })

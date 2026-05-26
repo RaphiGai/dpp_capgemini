@@ -24,9 +24,8 @@
             "roles": ["company_advanced"],
             "attr": { "tenant": "ORG-B" }
           },
-          "eve.enduser": {
-            "password": "x",
-            "roles": ["end_user"]
+          "ghost.unknown": {
+            "password": "x"
           }
         }
       }
