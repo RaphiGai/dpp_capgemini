@@ -2,3 +2,5 @@ ID;product_ID;color;size;sku;gtin;weight_g;status
 var-tshirt-blue-m;prod-tshirt-classic;Blue;M;TSHIRT-BLUE-M;04012345670010;180;active
 var-tshirt-blue-l;prod-tshirt-classic;Blue;L;TSHIRT-BLUE-L;04012345670027;190;active
 var-tee-black-s;prod-tee-fashionista;Black;S;TEE-BLK-S;04012345670041;160;inactive
+var-cotton-default;prod-mat-cotton;Natural;OneSize;OC-160-DEF;;;active
+var-elastane-default;prod-mat-elastane;Natural;OneSize;EL-40-DEF;;;active

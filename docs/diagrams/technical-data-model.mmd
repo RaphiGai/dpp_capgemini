@@ -10,17 +10,16 @@ erDiagram
     %% Product layer
     products           ||--o{ product_variants       : "product_ID"
     product_variants   ||--o{ batches                : "variant_ID"
-    batches            ||--o{ product_items          : "batch_ID"
     business_partners  ||--o{ batches                : "factory_ID"
     business_partners  ||--o{ batches                : "supplier_ID"
-    products           ||--o{ product_boms           : "parent_ID"
+    product_variants   ||--o{ product_boms           : "parent_ID"
     product_boms       }o--|| products               : "component_ID"
 
     %% Passport layer
     products           ||--o{ dpps                   : "product_ID"
-    product_items      ||--o| dpps                   : "dpp_ID"
+    batches            ||--o{ dpps                   : "batch_ID"
     dpps               ||--o{ qr_codes               : "dpp_ID"
-    product_boms       }o--o| dpps                   : "linked_dpp_ID"
+    product_boms       }o--o| dpps                   : "sub_dpp_ID"
 
     organizations {
         nvarchar_36  ID                   PK
@@ -109,16 +108,6 @@ erDiagram
         nvarchar_36   supplier_ID         FK "to business_partners"
     }
 
-    product_items {
-        nvarchar_36  ID                   PK
-        nvarchar_40  serial_number           "Unique per batch"
-        nvarchar_60  upi                  UK "globally unique"
-        nvarchar_12  item_status             "enum, Default active"
-        date         created_date
-        nvarchar_36  batch_ID             FK "Required"
-        nvarchar_36  dpp_ID               FK
-    }
-
     product_boms {
         nvarchar_36   ID                  PK
         decimal_10_3  quantity
@@ -126,14 +115,14 @@ erDiagram
         nvarchar_60   component_role
         boolean       is_mandatory           "Default true"
         nvarchar_12   status                 "enum, Default active"
-        nvarchar_36   parent_ID           FK "to products, Required"
+        nvarchar_36   parent_ID           FK "to product_variants, Required"
         nvarchar_36   component_ID        FK "to products, Required"
-        nvarchar_36   linked_dpp_ID       FK "to dpps, optional"
+        nvarchar_36   sub_dpp_ID          FK "to dpps, optional internal sub-DPP"
+        nvarchar_500  external_dpp_url       "optional external supplier-DPP link"
     }
 
     dpps {
         nvarchar_36   ID                  PK
-        nvarchar_8    granularity            "enum, Default item"
         nvarchar_12   dpp_type               "enum, Default product"
         nvarchar_12   status                 "enum, Default draft"
         nvarchar_8    visibility             "enum, Default internal"
@@ -146,10 +135,10 @@ erDiagram
         timestamp     archived_at
         date          valid_from
         timestamp     last_updated
-        nclob         aggregated_snapshot    "JSON snapshot at publication"
+        nclob         aggregated_snapshot    "Optional cache, live aggregation on public read"
         nclob         storytelling           "JSON array"
         nvarchar_36   product_ID          FK "Required"
-        nvarchar_36   item_ID             FK
+        nvarchar_36   batch_ID            FK "Optional, narrows DPP to specific batch"
     }
 
     qr_codes {

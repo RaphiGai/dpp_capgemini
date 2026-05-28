@@ -13,7 +13,7 @@ const DPP_OWNER_PATH = 'product.owning_organization_ID';
  * ValidationWarnings persistence: errors are reported inline via req.reject.
  */
 async function checkDPPReady(dpp) {
-  const { Products, ProductItems } = cds.entities('dpp');
+  const { Products, Batches } = cds.entities('dpp');
   const errors = [];
 
   if (!dpp.product_ID) {
@@ -28,42 +28,45 @@ async function checkDPPReady(dpp) {
       }
     }
   }
-  if (dpp.granularity === 'item' && !dpp.item_ID) {
-    errors.push('Item-level DPP requires a linked ProductItem.');
-  }
-  if (dpp.item_ID) {
-    const item = await SELECT.one.from(ProductItems).where({ ID: dpp.item_ID });
-    if (!item) errors.push(`Referenced ProductItem '${dpp.item_ID}' does not exist.`);
-    else if (!item.upi) errors.push('ProductItem must have a Unique Product Identity (UPI).');
+  if (dpp.batch_ID) {
+    const batch = await SELECT.one.from(Batches).where({ ID: dpp.batch_ID });
+    if (!batch) errors.push(`Referenced batch '${dpp.batch_ID}' does not exist.`);
   }
   return errors;
 }
 
 /**
- * Build a JSON snapshot of the full aggregated DPP — Product + Variant + Batch +
- * Item + BOM — for `DPPs.aggregated_snapshot` and the PDF renderer.
+ * Build a JSON snapshot of the DPP — Product + Variant (via batch) + Batch +
+ * BOM edges of the produced variant — for the optional `aggregated_snapshot`
+ * cache and the PDF renderer. Aggregated material values are NOT computed here;
+ * they are derived live by srv/lib/aggregator on public read.
  */
 async function buildSnapshot(dpp) {
-  const { Products, ProductVariants, Batches, ProductItems, ProductBOMs } = cds.entities('dpp');
+  const { Products, ProductVariants, Batches, ProductBOMs } = cds.entities('dpp');
 
-  const [product, item, bom] = await Promise.all([
+  const [product, batch] = await Promise.all([
     SELECT.one.from(Products).where({ ID: dpp.product_ID }),
-    dpp.item_ID ? SELECT.one.from(ProductItems).where({ ID: dpp.item_ID }) : null,
-    SELECT.from(ProductBOMs).where({ parent_ID: dpp.product_ID })
+    dpp.batch_ID ? SELECT.one.from(Batches).where({ ID: dpp.batch_ID }) : null
   ]);
 
   let variant = null;
-  let batch = null;
-  if (item) {
-    batch = await SELECT.one.from(Batches).where({ ID: item.batch_ID });
-    if (batch) variant = await SELECT.one.from(ProductVariants).where({ ID: batch.variant_ID });
+  let boms = [];
+  if (batch) {
+    variant = await SELECT.one.from(ProductVariants).where({ ID: batch.variant_ID });
+    if (variant) boms = await SELECT.from(ProductBOMs).where({ parent_ID: variant.ID });
+  } else {
+    const variants = await SELECT.from(ProductVariants)
+      .columns(['ID']).where({ product_ID: dpp.product_ID });
+    if (variants.length) {
+      boms = await SELECT.from(ProductBOMs)
+        .where({ parent_ID: { in: variants.map((v) => v.ID) } });
+    }
   }
 
   return {
     captured_at: new Date().toISOString(),
     dpp: {
       id: dpp.ID,
-      granularity: dpp.granularity,
       dpp_type: dpp.dpp_type,
       visibility: dpp.visibility,
       version: dpp.current_version
@@ -71,8 +74,7 @@ async function buildSnapshot(dpp) {
     product,
     variant,
     batch,
-    item,
-    bom
+    bom: boms
   };
 }
 
@@ -107,7 +109,6 @@ module.exports = (srv) => {
     }
     if (!req.data.status) req.data.status = 'draft';
     if (!req.data.visibility) req.data.visibility = 'internal';
-    if (!req.data.granularity) req.data.granularity = req.data.item_ID ? 'item' : 'model';
     if (!req.data.dpp_type) req.data.dpp_type = 'product';
     if (!req.data.current_version) req.data.current_version = 1;
     req.data.last_updated = new Date().toISOString();
@@ -115,16 +116,6 @@ module.exports = (srv) => {
 
   srv.before('UPDATE', DPPs, (req) => {
     req.data.last_updated = new Date().toISOString();
-  });
-
-  // ----- Link Item ↔ DPP after CREATE -----
-
-  srv.after('CREATE', DPPs, async (dpp) => {
-    if (dpp.item_ID) {
-      await UPDATE(cds.entities('dpp').ProductItems)
-        .set({ dpp_ID: dpp.ID })
-        .where({ ID: dpp.item_ID });
-    }
   });
 
   // ----- Action: approveDPP (draft → approved) -----

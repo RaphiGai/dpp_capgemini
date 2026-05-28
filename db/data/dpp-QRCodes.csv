@@ -1,2 +1,3 @@
 ID;dpp_ID;qr_value;qr_image_url;status;created_at;replaced_at
 qr-12345;dpp-12345;/public/dpp/seed-token-tshirt-12345;/public/dpp/seed-token-tshirt-12345/qr.png;active;2026-05-17T12:00:00Z;
+qr-cotton;dpp-cotton;/public/dpp/seed-token-cotton;/public/dpp/seed-token-cotton/qr.png;active;2026-04-15T12:00:00Z;

@@ -1,3 +1,5 @@
 ID;variant_ID;batch_number;production_date;factory_ID;supplier_ID;country_of_origin;production_stage;co2_footprint_kg;recycled_content_pct;status
 batch-2026-05-A;var-tshirt-blue-m;2026-05-A;2026-05-15;bp-braga;bp-cotton-coop;PT;Cut & Sew;2.400;20.00;approved
 batch-2026-05-B;var-tshirt-blue-l;2026-05-B;2026-05-18;bp-braga;bp-cotton-coop;PT;Cut & Sew;2.600;20.00;draft
+batch-cotton-2026-04;var-cotton-default;2026-04-COT;2026-04-10;bp-cotton-coop;bp-cotton-coop;TR;Spinning;3.000;15.00;approved
+batch-elastane-2026-04;var-elastane-default;2026-04-ELA;2026-04-12;;;DE;Extrusion;8.000;0.00;approved

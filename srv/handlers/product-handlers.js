@@ -10,28 +10,35 @@ function rejectCrossOrgWrite(req, fieldValue, callerOrgId) {
 }
 
 /**
- * Walk the BOM graph downward from `startId`: is `targetId` reachable as a
- * descendant? Used to reject edges that would create a cycle (US4.11).
+ * Walk the BOM graph downward from `startProductId`: is `targetProductId`
+ * reachable as a descendant component? BOMs are anchored at variant level, so
+ * each expansion step resolves all variants of the current product and follows
+ * their outgoing edges. Used to reject edges that would create a cycle
+ * (US4.11).
  */
-async function descendantsReach(startId, targetId, ProductBOMs) {
+async function descendantsReach(startProductId, targetProductId, { ProductVariants, ProductBOMs }) {
   const visited = new Set();
-  const stack = [startId];
+  const stack = [startProductId];
   while (stack.length) {
     const cur = stack.pop();
     if (visited.has(cur)) continue;
     visited.add(cur);
-    if (cur === targetId) return true;
-    const rows = await SELECT.from(ProductBOMs)
+    if (cur === targetProductId) return true;
+    const variants = await SELECT.from(ProductVariants)
+      .columns(['ID'])
+      .where({ product_ID: cur });
+    if (!variants.length) continue;
+    const edges = await SELECT.from(ProductBOMs)
       .columns(['component_ID'])
-      .where({ parent_ID: cur });
-    for (const r of rows) stack.push(r.component_ID);
+      .where({ parent_ID: { in: variants.map((v) => v.ID) } });
+    for (const e of edges) stack.push(e.component_ID);
   }
   return false;
 }
 
 module.exports = (srv) => {
   const {
-    Products, ProductVariants, Batches, ProductItems,
+    Products, ProductVariants,
     ProductBOMs, BusinessPartners
   } = srv.entities;
 
@@ -65,22 +72,25 @@ module.exports = (srv) => {
     if (!req.data.status) req.data.status = 'draft';
   });
 
-  srv.before('CREATE', ProductItems, (req) => {
-    if (!req.data.item_status) req.data.item_status = 'active';
-    if (!req.data.created_date) req.data.created_date = new Date().toISOString().slice(0, 10);
-  });
-
   // ----- BOM integrity: self-loop, quantity bounds, acyclic graph (US4.11) -----
 
   srv.before(['CREATE', 'UPDATE'], ProductBOMs, async (req) => {
     const { parent_ID, component_ID, quantity, unit } = req.data;
 
+    let parentVariant = null;
     if (parent_ID) {
-      await requireOwningOrg(req, 'Products', parent_ID);
+      const dbEntities = cds.entities('dpp');
+      parentVariant = await SELECT.one.from(dbEntities.ProductVariants)
+        .columns(['ID', 'product_ID'])
+        .where({ ID: parent_ID });
+      if (!parentVariant) {
+        req.reject(400, `Parent variant '${parent_ID}' does not exist.`);
+      }
+      await requireOwningOrg(req, 'Products', parentVariant.product_ID);
     }
 
-    if (parent_ID && component_ID && parent_ID === component_ID) {
-      req.reject(400, 'A product cannot reference itself as a component.');
+    if (parentVariant && component_ID && parentVariant.product_ID === component_ID) {
+      req.reject(400, 'A product cannot reference its own variant as a component.');
     }
     if (unit === '%' && quantity != null && (quantity <= 0 || quantity > 100)) {
       req.reject(400, 'Percentage share must be within (0, 100].');
@@ -88,10 +98,10 @@ module.exports = (srv) => {
     if (quantity != null && quantity < 0) {
       req.reject(400, 'BOM quantity must not be negative.');
     }
-    if (parent_ID && component_ID) {
+    if (parentVariant && component_ID) {
       const dbEntities = cds.entities('dpp');
       const wouldCycle = await descendantsReach(
-        component_ID, parent_ID, dbEntities.ProductBOMs
+        component_ID, parentVariant.product_ID, dbEntities
       );
       if (wouldCycle) {
         req.reject(409, 'Adding this component would introduce a cycle in the BOM.');

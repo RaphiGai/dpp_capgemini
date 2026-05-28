@@ -1,3 +1,3 @@
-ID;parent_ID;component_ID;quantity;unit;component_role;is_mandatory;linked_dpp_ID;status
-bom-tshirt-cotton;prod-tshirt-classic;prod-mat-cotton;95.000;%;Main fabric;true;;active
-bom-tshirt-elastane;prod-tshirt-classic;prod-mat-elastane;5.000;%;Stretch yarn;false;;active
+ID;parent_ID;component_ID;quantity;unit;component_role;is_mandatory;sub_dpp_ID;external_dpp_url;status
+bom-tshirt-cotton;var-tshirt-blue-m;prod-mat-cotton;95.000;%;Main fabric;true;dpp-cotton;;active
+bom-tshirt-elastane;var-tshirt-blue-m;prod-mat-elastane;5.000;%;Stretch yarn;false;;https://supplier.example/dpp/elastane-2026;active

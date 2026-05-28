@@ -2,12 +2,12 @@ using {
   dpp.identified,
   dpp.CountryISO2,
   dpp.GTIN,
+  dpp.URL,
   dpp.ProductType,
   dpp.ProductStatus,
   dpp.VariantStatus,
   dpp.BatchStatus,
   dpp.BOMStatus,
-  dpp.ItemStatus,
   dpp.ESPRComplianceStatus
 } from './common';
 using { dpp.Organizations, dpp.BusinessPartners } from './org';
@@ -36,7 +36,6 @@ entity Products : identified {
   status                : ProductStatus        default 'draft';
 
   variants : Association to many ProductVariants on variants.product = $self;
-  bom      : Composition of many ProductBOMs     on bom.parent       = $self;
 }
 
 annotate Products with @assert.unique : { gtin_per_org : [gtin, owning_organization] };
@@ -51,7 +50,8 @@ entity ProductVariants : identified {
   weight_g : Integer;
   status   : VariantStatus default 'active';
 
-  batches : Association to many Batches on batches.variant = $self;
+  batches : Association to many Batches    on batches.variant = $self;
+  bom     : Composition of many ProductBOMs on bom.parent     = $self;
 }
 
 annotate ProductVariants with @assert.unique : { sku_per_product : [sku, product] };
@@ -68,37 +68,24 @@ entity Batches : identified {
   co2_footprint_kg     : Decimal(10, 3);
   recycled_content_pct : Decimal(5, 2);
   status               : BatchStatus default 'draft';
-
-  items : Association to many ProductItems on items.batch = $self;
 }
 
 annotate Batches with @assert.unique : { batch_per_variant : [batch_number, variant] };
 
-// ----- Item level (Sheet 2 R9) -----
-entity ProductItems : identified {
-  batch         : Association to Batches not null;
-  serial_number : String(40);
-  upi           : String(60);    // Unique Product Identity (catalogue Sheet 3 R61)
-  item_status   : ItemStatus default 'active';
-  created_date  : Date;
-  dpp           : Association to DPPs;
-}
-
-annotate ProductItems with @assert.unique : {
-  upi_global   : [upi],
-  serial_batch : [serial_number, batch]
-};
-
 // ----- Bill of Materials (Sheet 2 R10) -----
+// BOM is anchored at variant level: a specific variant of a finished product
+// consumes a defined set of component products (which may themselves carry an
+// own DPP through their own production process).
 entity ProductBOMs : identified {
-  parent         : Association to Products not null;
-  component      : Association to Products not null;
-  quantity       : Decimal(10, 3);
-  unit           : String(8);
-  component_role : String(60);
-  is_mandatory   : Boolean default true;
-  linked_dpp     : Association to DPPs;
-  status         : BOMStatus default 'active';
+  parent           : Association to ProductVariants not null;
+  component        : Association to Products        not null;
+  quantity         : Decimal(10, 3);
+  unit             : String(8);
+  component_role   : String(60);
+  is_mandatory     : Boolean default true;
+  sub_dpp          : Association to DPPs;   // internal DPP of the component (own data)
+  external_dpp_url : URL;                   // alternative: external supplier-hosted DPP link
+  status           : BOMStatus default 'active';
 }
 
 annotate ProductBOMs with @assert.unique : { edge : [parent, component] };

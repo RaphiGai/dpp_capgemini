@@ -1,4 +1,0 @@
-ID;batch_ID;serial_number;upi;item_status;created_date;dpp_ID
-item-12345;batch-2026-05-A;12345;UPI-12345;active;2026-05-16;dpp-12345
-item-12346;batch-2026-05-A;12346;UPI-12346;active;2026-05-16;
-item-12347;batch-2026-05-B;12347;UPI-12347;active;2026-05-19;

@@ -6,7 +6,7 @@
 
 The **dpp_capgemini** project is a backend for an EU-ESPR–oriented Digital Product Passport (DPP) targeted at the fashion industry. It is implemented as a TUM × Capgemini student project.
 
-The schema is strictly aligned with the **Fashion DPP Object Field Catalogue** (`Fashion_DPP_Object_Field_Catalogue.xlsm`) — 11 MVP entities, no extras. Sprint 2+ catalogue objects (Compliance Record, Sustainability Metric, Visibility Rule, Document Link, Certificate as N:N) are intentionally deferred.
+The schema is aligned with the **Fashion DPP Object Field Catalogue** (`Fashion_DPP_Object_Field_Catalogue.xlsm`), simplified to the MVP-relevant subset (10 entities). The model drops a separate item level: a DPP always represents a finished product from the perspective of its producer, optionally narrowed to a concrete production batch. Bill-of-Materials links are anchored at the variant level and may attach an internal sub-DPP or an external supplier-DPP URL, forming a DPP hierarchy that is aggregated live on public read. Sprint 2+ catalogue objects (Compliance Record, Sustainability Metric, Visibility Rule, Document Link, Certificate as N:N) are intentionally deferred.
 
 **Technology stack**
 
@@ -34,7 +34,7 @@ Deployment topology on SAP Business Technology Platform. The diagram embeds the 
 
 | Service | Role | Status |
 |---|---|---|
-| **SAP HANA Cloud** | Stores all 11 catalogue tables in an isolated database container | In use |
+| **SAP HANA Cloud** | Stores the 10 schema tables in an isolated database container | In use |
 | **Cloud Foundry Runtime** | Hosts the backend service application | In use |
 | **Authorization and Trust Management (XSUAA)** | Issues and verifies authentication tokens. Single application scope; role and tenant resolved inside the application from the user table. | In use |
 | **Application Router** | Terminates the user session and serves the static UI | In use |
@@ -75,7 +75,7 @@ Layers: client → BTP platform → API layer (authenticated OData and public RE
 
 **API layer**
 
-- Authenticated OData V4 service exposing 11 entity projections, 4 lifecycle actions and 1 QR-image function on the passport
+- Authenticated OData V4 service exposing 10 entity projections, 4 lifecycle actions and 1 QR-image function on the passport
 - Public REST endpoints for the consumer view, the QR image and the health check
 - A role and tenant resolver looks up the caller in the user table and applies tenant scope before any handler runs
 
@@ -83,17 +83,18 @@ Layers: client → BTP platform → API layer (authenticated OData and public RE
 
 - Product logic — applies defaults, runs the bill-of-materials cycle check, archives products
 - Passport lifecycle logic — approves, publishes, archives passports; rotates QR codes; builds aggregated snapshots
-- Public view logic — verifies the signed QR token and assembles the consumer payload
+- Public view logic — verifies the signed QR token, traverses the DPP hierarchy and assembles the consumer payload including the live aggregation
 - Identity logic — returns the caller's identity to the UI
 
 **Supporting libraries**
 
 - Signed token library (creates and verifies the QR token)
 - Secret loader (injects runtime secrets into the backend)
+- Aggregator library (`srv/lib/aggregator.js`) — recursive DPP-hierarchy aggregation with a plug-in registry of field aggregators (weighted sum, weighted average, string union, fibre rollup). New aggregators can be registered without touching existing logic.
 
 **Database**
 
-- SAP HANA Cloud, single isolated database container, 11 catalogue tables
+- SAP HANA Cloud, single isolated database container, 10 schema tables
 
 ## 2.2 Endpoint inventory
 
@@ -116,7 +117,7 @@ Layers: client → BTP platform → API layer (authenticated OData and public RE
 
 The semantic view of the data model — concepts and relationships, without implementation detail. Foreign-key columns, audit timestamps and operational marker fields are intentionally omitted (they are present in the Technical Data Model in section 4). The structural shape is identical to the technical view, but the attribute lists are reduced to those that carry business meaning.
 
-Organizations sit at the top of the master-data tree; they own Users, Business Partners, and Products. A Product fans out through Product Variants → Batches → Product Items, and each Product Item owns a 1:1 Product Passport. The Product Passport keeps a history of QR Codes (latest = active). Product BOMs link a parent Product to a component Product (back to the same entity), so the entire chain repeats recursively for materials and components.
+Organizations sit at the top of the master-data tree; they own Users, Business Partners, and Products. A Product fans out through Product Variants → Batches. A Product Passport always describes a finished product from the producer's view; it is anchored on a Product and optionally narrows to a concrete Batch. Each Passport keeps a history of QR Codes (latest = active). Bill-of-Materials lines hang from a Product Variant and reference a component Product. A BOM edge can attach either an internal sub-DPP (another Passport in the system) or an external supplier-DPP URL — this forms a DPP hierarchy that is traversed and aggregated live when a public consumer scans the QR code.
 
 ![Semantic ER diagram](diagrams/erd.png)
 
@@ -126,37 +127,35 @@ Organizations sit at the top of the master-data tree; they own Users, Business P
 - **User** — Identifier, Email, Display name, Role.
 - **Business Partner** — Identifier, Name, Country, Contact person, External identifier (GLN / VAT / DUNS).
 - **Business Partner Role** — Identifier, Role type.
-- **Product** — Identifier, Product type (finished or material), Name, Brand, Category, Global Trade Item Number, Fibre composition, Country of origin, ESPR compliance state.
+- **Product** — Identifier, Product type (finished, material, component or packaging), Name, Brand, Category, Global Trade Item Number, Fibre composition, Country of origin, ESPR compliance state.
 - **Product Variant** — Identifier, Colour, Size, Stock Keeping Unit, Weight.
 - **Batch** — Identifier, Batch number, Production date, Country of origin, Production stage, CO2 footprint, Recycled content.
-- **Product Item** — Identifier, Serial number, Unique Product Identifier.
-- **Product BOM** — Identifier, Quantity, Unit, Component role, Mandatory flag.
-- **Product Passport** — Identifier, Status, Granularity, Visibility, Signed token, Public link, Frozen snapshot, Storytelling.
+- **Product BOM** — Identifier, Quantity, Unit, Component role, Mandatory flag, Internal sub-passport link, External supplier-DPP URL.
+- **Product Passport** — Identifier, Status, Visibility, Signed token, Public link, Optional aggregation cache, Storytelling.
 - **QR Code** — Identifier, Encoded value, Lifecycle status.
 
 The full column-level details with HANA data types and constraints are in section 4.
 
 ## 3.2 Cardinalities
 
-Cross-referenced with the official field catalogue (sheet 5):
-
-| Relationship | Cardinality | Catalogue reference |
+| Relationship | Cardinality | Notes |
 |---|---|---|
-| Organisation → Users | one to many | R2 |
-| Organisation → Products | one to many | R3 |
-| Business Partner → Business Partner Roles | one to many | R4 |
-| Product → Product Variants | one to many | R5 |
-| Product Variant → Batches | one to many | R6 |
-| Batch → Product Items | one to many | R7 |
-| Product Item → Product Passport | one to one | R8 |
-| Product Passport → QR Codes | one active plus history | R9 |
-| Product → Bill of Materials (as parent) | one to many | R10 |
-| Bill of Materials → Product (as component) | many to one | R11 |
-| Bill of Materials → Product Passport (linked material) | many to optional one | R12 |
+| Organisation → Users | one to many | tenant-scoped |
+| Organisation → Products | one to many | tenant-scoped |
+| Organisation → Business Partners | one to many | tenant-scoped |
+| Business Partner → Business Partner Roles | one to many | a partner can hold several roles |
+| Product → Product Variants | one to many | colour / size / SKU |
+| Product Variant → Batches | one to many | production runs |
+| Product Variant → Bill of Materials (as parent) | one to many | BOM anchored at variant |
+| Bill of Materials → Product (as component) | many to one | component is itself a Product |
+| Bill of Materials → Product Passport (internal sub-DPP) | many to optional one | optional, mutually informative with the external link |
+| Product → Product Passport | one to many | DPP describes a finished-product view |
+| Batch → Product Passport | one to many (optional) | optional narrowing to a concrete batch |
+| Product Passport → QR Codes | one active plus history | rotation keeps a single active row |
 
 # 4. Technical Data Model (Data Schema)
 
-The physical schema as deployed to SAP HANA Cloud. The diagram below shows all 11 tables with their columns, HANA SQL data types, constraints, and foreign-key references.
+The physical schema as deployed to SAP HANA Cloud. The diagram below shows all 10 tables with their columns, HANA SQL data types, constraints, and foreign-key references.
 
 ![Technical Data Model](diagrams/technical-data-model.png)
 
@@ -164,7 +163,7 @@ The data model is declared in CDS (SAP Cloud Application Programming Model) and 
 
 - `db/common.cds` — base types and enumerations
 - `db/org.cds` — Company, Users, Business Partners
-- `db/product.cds` — Products, Variants, Batches, Items, BOM
+- `db/product.cds` — Products, Variants, Batches, Bill of Materials
 - `db/dpp.cds` — Digital Product Passport and QR Codes
 
 ## 4.1 Types and Enumerations (`common.cds`)
@@ -181,11 +180,9 @@ The data model is declared in CDS (SAP Cloud Application Programming Model) and 
 | `VariantStatus` | enum | active, inactive, archived |
 | `BatchStatus` | enum | draft, approved, archived |
 | `BOMStatus` | enum | active, archived |
-| `ItemStatus` | enum | active, sold, repaired, recycled, disposed, archived |
 | `DPPStatus` | enum | draft, in_review, approved, published, archived |
 | `DPPType` | enum | product, material |
 | `Visibility` | enum | internal, public |
-| `Granularity` | enum | model, batch, item |
 | `QRCodeStatus` | enum | active, invalid, replaced |
 | `ESPRComplianceStatus` | enum | draft, in_review, compliant, non_compliant |
 | `UserRole` | enum | company_advanced, company_user |
@@ -258,7 +255,7 @@ UNIQUE on `(partner, role)`.
 
 ## 4.3 Product Hierarchy (`product.cds`)
 
-The catalogue-aligned hierarchy is **Product → ProductVariant → Batch → ProductItem → DPP + QR**. BOM lines link a parent product to a component product (back to the same `Products` entity), so the chain repeats recursively for materials/components.
+The hierarchy is **Product → ProductVariant → Batch → DPP + QR**. Bill-of-Materials lines hang from a `ProductVariants` row and reference a component `Products` row. A BOM edge can attach either an internal `DPPs` row (`sub_dpp`) or an external supplier-DPP URL (`external_dpp_url`); the consumer-facing read traverses this graph recursively and aggregates values across levels.
 
 ### Products
 
@@ -286,7 +283,7 @@ Generic product master data: a finished product, material, component or packagin
 
 ### ProductVariants
 
-n:1 to Products. A variant captures color/size/SKU and identification at variant level.
+n:1 to Products. A variant captures color/size/SKU and identification at variant level. The Bill of Materials is anchored here (`bom` Composition).
 
 | Field | Type | Notes |
 |-------|------|-------|
@@ -298,6 +295,7 @@ n:1 to Products. A variant captures color/size/SKU and identification at variant
 | gtin | GTIN | |
 | weight_g | Integer | |
 | status | VariantStatus | default `active` |
+| bom | Composition of many ProductBOMs | child BOM edges |
 
 ### Batches
 
@@ -317,50 +315,36 @@ n:1 to ProductVariants. Captures production-time information (factory, country, 
 | recycled_content_pct | Decimal(5,2) | |
 | status | BatchStatus | default `draft` |
 
-### ProductItems
-
-The serialised, uniquely identifiable physical item. Each item gets its own DPP.
-
-| Field | Type | Notes |
-|-------|------|-------|
-| ID | String(36) | Primary key |
-| batch | Association to Batches | not null |
-| serial_number | String(40) | UNIQUE per batch |
-| upi | String(60) | UNIQUE global — Unique Product Identity (catalogue R61) |
-| item_status | ItemStatus | default `active` |
-| created_date | Date | |
-| dpp | Association to DPPs | linked after publish |
-
 ### ProductBOMs
 
-Bill of Materials: an edge between a parent Product and a component Product. The component is **also a `Products` row**, so it can carry its own variants/batches/items/DPPs.
+Bill of Materials: an edge between a parent ProductVariant and a component Product. The component is itself a `Products` row, so the chain repeats recursively (its own variants, batches and DPPs). A BOM line may attach an internal sub-DPP and/or an external supplier-DPP URL — the consumer-side read traverses these links to build a hierarchical aggregation.
 
 | Field | Type | Notes |
 |-------|------|-------|
 | ID | String(36) | Primary key |
-| parent | Association to Products | not null — finished/parent product |
-| component | Association to Products | not null — material/component |
+| parent | Association to ProductVariants | not null — finished-product variant |
+| component | Association to Products | not null — material/component product |
 | quantity | Decimal(10,3) | |
 | unit | String(8) | `%`, `kg`, `m`, `pcs` |
 | component_role | String(60) | e.g. "Main fabric" |
 | is_mandatory | Boolean | default true |
-| linked_dpp | Association to DPPs | optional link to a material DPP |
+| sub_dpp | Association to DPPs | optional internal sub-DPP |
+| external_dpp_url | URL | optional external supplier-DPP link |
 | status | BOMStatus | default `active` |
 
-UNIQUE on `(parent, component)`. Self-loops and transitive cycles are rejected by handler.
+UNIQUE on `(parent, component)`. A self-loop (`parent.product = component`) and transitive cycles are rejected by handler. The cycle check walks BOM edges by expanding each Product into its Variants and then into their outgoing BOM rows.
 
 ## 4.4 Digital Product Passport (`dpp.cds`)
 
 ### DPPs
 
-The central passport entity. Item-level by default but supports model- and batch-granularity for non-serialised products.
+The central passport entity. A DPP represents a finished product from the perspective of its producer. The optional `batch` link narrows the passport to a concrete production run; otherwise the passport applies on a model/variant level.
 
 | Field | Type | Meaning |
 |-------|------|---------|
 | ID | String(36) | Primary key |
-| product | Association to Products | not null — always anchored on the model |
-| item | Association to ProductItems | optional — required for item-level DPPs |
-| granularity | Granularity | default `item` |
+| product | Association to Products | not null — describes which product the DPP belongs to |
+| batch | Association to Batches | optional — narrows the DPP to a specific batch |
 | dpp_type | DPPType | default `product` |
 | status | DPPStatus | default `draft` |
 | visibility | Visibility | default `internal` |
@@ -371,8 +355,10 @@ The central passport entity. Item-level by default but supports model- and batch
 | approved_at, published_at, archived_at | Timestamp | lifecycle markers |
 | valid_from | Date | |
 | last_updated | Timestamp | |
-| aggregated_snapshot | LargeString | JSON snapshot built on publish |
+| aggregated_snapshot | LargeString | optional cache of the last aggregation; the public read computes aggregations live |
 | storytelling | LargeString | optional JSON array of `{title, body, media_url, media_type}` |
+
+The hierarchical aggregation is computed on-demand by [`srv/lib/aggregator.js`](../srv/lib/aggregator.js). For every public read it walks the BOM graph downwards from the DPP's variant, recurses into every `sub_dpp`, and combines self values with weighted child contributions. Out-of-the-box aggregators: `co2_footprint_kg` (weighted sum), `recycled_content_pct` (weighted average), `substances_of_concern` (union), `fibre_composition` (rollup). Additional aggregators can be registered at runtime through `registerAggregator(name, def)`. Sub-DPPs that are external (URL only) or missing are reported as `missing` entries with `incomplete: true` on the response.
 
 ### QRCodes
 
@@ -396,9 +382,7 @@ History of every QR token ever minted for a DPP. The most recent row has `status
 - `Products (gtin, owning_organization)` UNIQUE
 - `ProductVariants (sku, product)` UNIQUE
 - `Batches (batch_number, variant)` UNIQUE
-- `ProductItems.upi` UNIQUE (global)
-- `ProductItems (serial_number, batch)` UNIQUE
-- `ProductBOMs (parent, component)` UNIQUE — no duplicate BOM edges, no self-loops, no cycles
+- `ProductBOMs (parent, component)` UNIQUE — no duplicate BOM edges, no self-loops, no cycles (parent is a Variant)
 - `DPPs.qr_token` UNIQUE
 
 ## 4.6 CDS → HANA → ABAP type mapping

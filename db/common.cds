@@ -37,15 +37,6 @@ type BOMStatus : String(12) enum {
   archived;
 }
 
-type ItemStatus : String(12) enum {
-  active;
-  sold;
-  repaired;
-  recycled;
-  disposed;
-  archived;
-}
-
 type DPPStatus : String(12) enum {
   draft;
   in_review;
@@ -62,12 +53,6 @@ type DPPType : String(12) enum {
 type Visibility : String(8) enum {
   internal;
   public;
-}
-
-type Granularity : String(8) enum {
-  model;
-  batch;
-  item;
 }
 
 type QRCodeStatus : String(10) enum {

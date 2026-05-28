@@ -14,16 +14,14 @@ describe('Product BOM (Products + ProductBOMs)', () => {
       aliceAdmin
     );
     expect(data.value.length).toBeGreaterThan(0);
-    // With @restrict relaxed to authenticated-user the tenant filter is off,
-    // so we only check that the catalog contains both product types.
     const types = new Set(data.value.map((p) => p.product_type));
     expect(types.has('finished')).toBe(true);
     expect(types.has('material')).toBe(true);
   });
 
-  test('Classic T-Shirt BOM links to cotton and elastane materials', async () => {
+  test('Classic T-Shirt variant BOM links to cotton and elastane components', async () => {
     const { data } = await GET(
-      "/odata/v4/dpp/ProductBOMs?$filter=parent_ID eq 'prod-tshirt-classic'",
+      "/odata/v4/dpp/ProductBOMs?$filter=parent_ID eq 'var-tshirt-blue-m'",
       aliceAdmin
     );
     const components = new Set(data.value.map((b) => b.component_ID));
@@ -34,8 +32,7 @@ describe('Product BOM (Products + ProductBOMs)', () => {
 });
 
 describe('Public consumer DTO with recursive BOM tree', () => {
-  test('seeded item-level DPP exposes nested BOM via QR token', async () => {
-    // Mint a real HMAC-signed token and stamp it onto the seeded DPP.
+  test('seeded batch-level DPP exposes nested BOM + aggregation via QR token', async () => {
     const token = tokens.generate();
     const { DPPs } = cds.entities('dpp');
     await UPDATE(DPPs).set({ qr_token: token }).where({ ID: 'dpp-12345' });
@@ -43,7 +40,6 @@ describe('Public consumer DTO with recursive BOM tree', () => {
     const { data } = await axios.get(`/public/dpp/${token}`);
 
     expect(data.product.name).toBe('Classic T-Shirt');
-    expect(data.item.upi).toBe('UPI-12345');
     expect(data.variant.color).toBe('Blue');
     expect(data.batch.batch_number).toBe('2026-05-A');
     expect(Array.isArray(data.materials)).toBe(true);
@@ -53,5 +49,15 @@ describe('Public consumer DTO with recursive BOM tree', () => {
     expect(Number(cotton.quantity)).toBe(95);
     expect(cotton.unit).toBe('%');
     expect(cotton.role).toBe('Main fabric');
+    expect(cotton.sub_dpp).toMatchObject({ id: 'dpp-cotton' });
+
+    const elastane = data.materials.find((m) => m.name === 'Elastane Yarn');
+    expect(elastane).toBeDefined();
+    expect(elastane.external_dpp_url).toMatch(/^https?:\/\//);
+    expect(elastane.sub_dpp).toBeNull();
+
+    expect(data.aggregated).toBeDefined();
+    expect(data.aggregated.incomplete).toBe(true);
+    expect(typeof data.aggregated.values.co2_footprint_kg).toBe('number');
   });
 });

@@ -31,7 +31,7 @@ Editable source: [diagrams/solution-context.drawio](diagrams/solution-context.dr
 
 - **ESPR regulation (EU 2024/1781)** — mandatory passport fields for textiles
 - **Market surveillance regulation (EU 2019/1020)** — public authority access without login
-- The MVP covers item granularity, signed QR tokens and the public token endpoint
+- The MVP covers finished-product DPPs (optionally narrowed to a batch), signed QR tokens, the public token endpoint and recursive hierarchical aggregation over linked sub-DPPs
 
 ---
 

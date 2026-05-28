@@ -42,7 +42,6 @@ service DPPService @(
 
   entity ProductVariants       as projection on db.ProductVariants;
   entity Batches               as projection on db.Batches;
-  entity ProductItems          as projection on db.ProductItems;
   entity ProductBOMs           as projection on db.ProductBOMs;
 
   entity DPPs as projection on db.DPPs actions {

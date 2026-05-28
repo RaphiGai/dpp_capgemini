@@ -10,17 +10,16 @@ erDiagram
     %% Product layer
     Product          ||--o{ Product_Variant   : "has variants"
     Product_Variant  ||--o{ Batch             : "produced in"
-    Batch            ||--o{ Product_Item      : "contains"
     Business_Partner ||--o{ Batch             : "manufactured by"
     Business_Partner ||--o{ Batch             : "supplied by"
-    Product          ||--o{ Product_BOM       : "parent of"
+    Product_Variant  ||--o{ Product_BOM       : "consumes"
     Product_BOM      }o--|| Product           : "uses as component"
 
     %% Passport layer
     Product          ||--o{ Product_Passport  : "described by"
-    Product_Item     ||--o| Product_Passport  : "one to one"
+    Batch            ||--o{ Product_Passport  : "narrowed to"
     Product_Passport ||--o{ QR_Code           : "QR history"
-    Product_BOM      }o--o| Product_Passport  : "optional link"
+    Product_BOM      }o--o| Product_Passport  : "internal sub-DPP"
 
     Organisation {
         text Identifier              PK
@@ -81,28 +80,21 @@ erDiagram
         number Recycled_content
     }
 
-    Product_Item {
-        text Identifier              PK
-        text Serial_number
-        text Unique_Product_Identifier UK
-    }
-
     Product_BOM {
         text Identifier              PK
         number Quantity
         text Unit
         text Component_role
         boolean Mandatory
+        text External_supplier_DPP_URL
     }
 
     Product_Passport {
         text Identifier              PK
         text Status
-        text Granularity
         text Visibility
         text Signed_token            UK
         text Public_link
-        text Frozen_snapshot
         text Storytelling
     }
 
