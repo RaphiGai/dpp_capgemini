@@ -10,7 +10,19 @@ using {
 
 namespace dpp;
 
-entity Organizations : identified {
+// Audit aspect (catalogue: CreatedBy / ChangedBy / CreatedAt / LastChange).
+// createdBy/changedBy reference the acting Users row. All four are filled
+// automatically by the central handlers in srv/dpp-service.js — never by the
+// client. Applied to the eight catalogue business objects (not to Users,
+// BusinessPartnerRoles or QRCodes).
+aspect audited {
+  createdAt  : Timestamp;
+  createdBy  : Association to Users;
+  lastChange : Timestamp;
+  changedBy  : Association to Users;
+}
+
+entity Organizations : identified, audited {
   legal_name         : String(120) not null;
   trade_name         : String(120);
   country_iso2       : CountryISO2;
@@ -38,7 +50,7 @@ entity Users : identified {
 
 annotate Users with @assert.unique : { email_per_org : [email, organization] };
 
-entity BusinessPartners : identified {
+entity BusinessPartners : identified, audited {
   owning_organization : Association to Organizations not null;
   name                : String(120) not null;
   country_iso2        : CountryISO2;

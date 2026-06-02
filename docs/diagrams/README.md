@@ -12,9 +12,9 @@ These four diagrams correspond directly to the four required deliverables in [..
 
 | # | File | Maps to | Contents |
 |---|---|---|---|
-| 1 | [technical-data-model.drawio](technical-data-model.drawio) | Technical Data Model | Physical schema as deployed to HANA Cloud: 11 tables with columns, data types and constraints |
+| 1 | [technical-data-model.drawio](technical-data-model.drawio) | Technical Data Model | Physical schema as deployed to HANA Cloud: 12 tables (incl. serialised Product Items and DPP Marketing Links) with columns, data types and constraints |
 | 2 | [software-architecture.drawio](software-architecture.drawio) | Software Architecture | Component view: client → BTP platform → OData and REST → business logic → libraries → database |
-| 3 | [erd.drawio](erd.drawio) | Semantic Model (Entity Relationship) | 11 entities with attributes and foreign key relations (crow's-foot notation) |
+| 3 | [erd.drawio](erd.drawio) | Semantic Model (Entity Relationship) | 12 entities with attributes and foreign key relations (crow's-foot notation), incl. Product Item with its 1:1 item-level DPP and DPP Marketing Links |
 | 4 | [btp-architecture.drawio](btp-architecture.drawio) | BTP Architecture | Deployment topology on SAP BTP: subaccount, Cloud Foundry, MTA modules, authorization service, HANA database, runtime secrets |
 
 ### Supplementary diagrams (appendix)
@@ -28,7 +28,24 @@ These four diagrams support [../appendix.md](../appendix.md). They are useful fo
 | 7 | [dpp-lifecycle.drawio](dpp-lifecycle.drawio) | Appendix C — Product Passport Lifecycle | Status transitions: Draft → In Review → Approved → Published → Archived |
 | 8 | [sprint1-demo-sequence.drawio](sprint1-demo-sequence.drawio) | Appendix D — Sprint-1 Demo Sequence | End-to-end Sprint-1 demo workflow (master data → lifecycle → consumer scan) |
 
-The previous Mermaid sources (`.mmd` files) are kept as a text-only reference for diff-friendly reviews, but they are **no longer authoritative**.
+The Mermaid sources (`.mmd` files) are kept as a text-only reference for diff-friendly reviews. For the **architecture** diagrams (software-architecture, btp-architecture, solution-context, deployment-topology, sprint1-demo-sequence) the `.drawio` file remains authoritative. For the three **data-model** diagrams (`technical-data-model`, `erd`, `dpp-lifecycle`) the `.png`/`.svg` exports are regenerated directly from the `.mmd` source with `mermaid-cli` — see [Regenerating the data-model diagrams](#regenerating-the-data-model-diagrams).
+
+## Regenerating the data-model diagrams
+
+The data-model diagrams are rendered from their `.mmd` source to a high-resolution PNG (4× scale) and a vector SVG (the SVG is resolution-independent and the sharpest option for embedding):
+
+```bash
+# one-off: install the renderer (pulls puppeteer + chromium)
+npm i -g @mermaid-js/mermaid-cli
+
+# from docs/diagrams/
+for n in technical-data-model erd dpp-lifecycle; do
+  mmdc -i "$n.mmd" -o "$n.svg" -b white          # vector, max quality
+  mmdc -i "$n.mmd" -o "$n.png" -b white -s 4      # 4× high-resolution raster
+done
+```
+
+Edit the `.mmd`, rerun the commands, and commit the `.mmd`, `.png` and `.svg` together.
 
 ## Editing in the user interface
 

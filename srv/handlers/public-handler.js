@@ -106,7 +106,34 @@ function toConsumerDTO(dpp, ctx) {
     materials: ctx.materialsTree,
     aggregated: ctx.aggregated,
     storytelling,
+    marketing: ctx.marketing || [],
   };
+}
+
+/**
+ * Active, currently-valid marketing/advertising links for the consumer view:
+ * either attached to this DPP or org-wide (dpp_ID null) within the same
+ * organisation. Filtered by is_active + the valid_from/valid_to window and
+ * sorted by display_order.
+ */
+async function loadMarketingLinks(owningOrgId, dppId) {
+  if (!owningOrgId) return [];
+  const { DPPMarketingLinks } = cds.entities('dpp');
+  const links = await SELECT.from(DPPMarketingLinks)
+    .where({ owning_organization_ID: owningOrgId, is_active: true });
+  const today = new Date().toISOString().slice(0, 10);
+  return links
+    .filter((l) => l.dpp_ID == null || l.dpp_ID === dppId)
+    .filter((l) => (!l.valid_from || l.valid_from <= today) && (!l.valid_to || l.valid_to >= today))
+    .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
+    .map((l) => ({
+      link_type: l.link_type,
+      title: l.title,
+      url: l.url,
+      display_order: l.display_order,
+      valid_from: l.valid_from,
+      valid_to: l.valid_to,
+    }));
 }
 
 async function loadDPPContext(dpp) {
@@ -148,8 +175,9 @@ async function loadDPPContext(dpp) {
   }
 
   const aggregated = await aggregate(dpp.ID);
+  const marketing = await loadMarketingLinks(owningOrgId, dpp.ID);
 
-  return { product, variant, batch, materialsTree, aggregated };
+  return { product, variant, batch, materialsTree, aggregated, marketing };
 }
 
 async function loadDPPByToken(token) {

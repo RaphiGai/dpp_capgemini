@@ -23,7 +23,7 @@ Editable source: [diagrams/btp-architecture.drawio](diagrams/btp-architecture.dr
 
 | Service | Role | Status |
 |---|---|---|
-| **SAP HANA Cloud** | Stores the 10 schema tables in an isolated database container | In use |
+| **SAP HANA Cloud** | Stores the 12 schema tables in an isolated database container | In use |
 | **Cloud Foundry Runtime** | Hosts the backend service application | In use |
 | **Authorization and Trust Management (XSUAA)** | Issues and verifies authentication tokens. Single application scope; role and tenant resolved inside the application from the user table. | In use |
 | **Application Router** | Terminates the user session and serves the static UI | In use |
@@ -74,15 +74,17 @@ Editable source: [diagrams/software-architecture.drawio](diagrams/software-archi
 
 **API layer**
 
-- Authenticated OData V4 service exposing 10 entity projections, 4 lifecycle actions and 1 QR-image function on the passport
+- Authenticated OData V4 service exposing 12 entity projections, 4 lifecycle actions and 1 QR-image function on the passport
 - Public REST endpoints for the consumer view, the QR image and the health check
 - A role and tenant resolver looks up the caller in the user table and applies tenant scope before any handler runs
 
 **Business logic layer**
 
 - Product logic — applies defaults, runs the bill-of-materials cycle check (Variant→Component, transitive), archives products
+- Product-item logic — auto-creates the unique item-level DPP (plus an active QR code) whenever a serialised item is added
+- Marketing-link logic — tenant-defaults and validates marketing links (per DPP or organisation-wide)
 - Passport lifecycle logic — approves, publishes, archives passports; rotates QR codes; optionally caches aggregated snapshots
-- Public view logic — verifies the signed QR token, recursively traverses the DPP hierarchy and assembles the consumer payload with a live field aggregation
+- Public view logic — verifies the signed QR token, recursively traverses the DPP hierarchy, attaches active marketing links, and assembles the consumer payload with a live field aggregation
 - Identity logic — returns the caller's identity to the UI
 
 **Supporting libraries**
@@ -93,13 +95,13 @@ Editable source: [diagrams/software-architecture.drawio](diagrams/software-archi
 
 **Database**
 
-- SAP HANA Cloud, single isolated database container, 10 schema tables
+- SAP HANA Cloud, single isolated database container, 12 schema tables
 
 ### 2.2 Endpoint inventory
 
 | Path | Verb | What it does | Who can call it |
 |---|---|---|---|
-| `/odata/v4/dpp` | GET / POST / PATCH / DELETE | Read or write any of the 10 schema entities | Authenticated users (tenant-scoped) |
+| `/odata/v4/dpp` | GET / POST / PATCH / DELETE | Read or write any of the 12 schema entities | Authenticated users (tenant-scoped) |
 | `/odata/v4/dpp/DPPs(id)/DPPService.approveDPP` | POST | Move the passport from Draft to Approved | Advanced company user |
 | `/odata/v4/dpp/DPPs(id)/DPPService.publishDPP` | POST | Publish the passport, build a snapshot and rotate the QR code | Advanced company user |
 | `/odata/v4/dpp/DPPs(id)/DPPService.archiveDPP` | POST | Soft-delete the passport | Advanced company user |
@@ -115,7 +117,7 @@ Editable source: [diagrams/software-architecture.drawio](diagrams/software-archi
 
 ## 3. Semantic Model (Entity Relationship)
 
-The conceptual data model — 10 entities with their attributes and foreign key relationships, drawn in crow's-foot notation. The semantic view omits foreign-key columns, audit timestamps and operational marker fields; the full schema detail is in section 4.
+The conceptual data model — 12 entities with their attributes and foreign key relationships, drawn in crow's-foot notation. The semantic view omits foreign-key columns, audit timestamps and operational marker fields; the full schema detail is in section 4.
 
 ![Entity Relationship Diagram](diagrams/erd.png)
 
@@ -131,12 +133,17 @@ Editable source: [diagrams/erd.mmd](diagrams/erd.mmd)
 | Business Partner → Business Partner Roles | one to many | a partner can hold several roles |
 | Product → Product Variants | one to many | colour / size / SKU |
 | Product Variant → Batches | one to many | production runs |
+| Batch → Product Items | one to many | individual serialised units |
 | Product Variant → Bill of Materials (as parent) | one to many | BOM anchored at variant |
 | Bill of Materials → Product (as component) | many to one | component is itself a Product |
 | Bill of Materials → Product Passport (internal sub-DPP) | many to optional one | mutually informative with external link |
 | Product → Product Passport | one to many | DPP describes a finished-product view |
 | Batch → Product Passport | one to many (optional) | optional narrowing of the DPP to a concrete batch |
+| Product Variant → Product Passport | one to many (optional) | optional link to the represented variant |
+| Product Item → Product Passport | one to one | each item carries exactly one unique DPP (auto-created) |
 | Product Passport → QR Codes | one active plus history | rotation keeps a single active row |
+| Product Passport → Marketing Links | one to many (optional) | DPP-specific ads / product info shown on the public view |
+| Organisation → Marketing Links | one to many | org-wide campaigns (DPP link null) |
 
 ### 3.2 Traceability chain
 
@@ -144,13 +151,14 @@ The semantic core is the traceability chain from a published finished-product DP
 
 ```
 Organisation
-   owns → Product → has variants → Batch
+   owns → Product → has variants → Batch → Product Item
                             └── Bill of Materials ─► component Product
                                           ├─ sub_dpp ─► upstream Product Passport (internal)
                                           └─ external_dpp_url ─► supplier-hosted passport
 
 Product → Product Passport → QR Code history
-Batch  → Product Passport (optional narrowing)
+Batch        → Product Passport (optional narrowing)
+Product Item → Product Passport (1:1, unique item-level DPP + QR)
 ```
 
 A scanned QR code resolves to a finished-product DPP. From there the consumer view recursively walks the BOM hierarchy: each component is either inlined, linked to an internal sub-DPP (further traversed) or pointed at an external supplier-DPP URL. CO₂, recycled-content, substances of concern and fibre composition are aggregated over the entire reachable hierarchy on every public read.
@@ -158,7 +166,8 @@ A scanned QR code resolves to a finished-product DPP. From there the consumer vi
 ### 3.3 Key invariants
 
 - Organisations own users, business partners and products by tenant
-- A passport describes a finished product from its producer's view; an optional `batch` link narrows it further
+- A passport describes a finished product from its producer's view; optional `batch`, `variant` and `item` links narrow it further
+- Each serialised Product Item carries exactly one unique passport, created automatically when the item is added
 - Only one QR code is active per passport at any time; older ones are kept as history
 - A BOM line has a parent Variant and a component Product. The component may live in a different organisation (cross-tenant supplier reference) and may carry its own passport
 - Aggregated fields (CO₂, recycled content, substances of concern, fibre composition) are not stored on the parent DPP; they are computed live from the hierarchy on each public read
@@ -167,13 +176,15 @@ A scanned QR code resolves to a finished-product DPP. From there the consumer vi
 
 ## 4. Technical Data Model
 
-The physical schema as deployed to SAP HANA Cloud — 10 tables with columns, data types and constraints.
+The physical schema as deployed to SAP HANA Cloud — 12 tables with columns, data types and constraints.
 
 ![Technical Data Model](diagrams/technical-data-model.png)
 
 Editable source: [diagrams/technical-data-model.mmd](diagrams/technical-data-model.mmd)
 
 Schema tables in detail follow in sections 4.1 to 4.4. For per-field business semantics see [technical_documentation.md](technical_documentation.md).
+
+**Audit columns.** The nine business-object tables — Organizations, Business Partners, Products, Product Variants, Batches, Product Items, Product BOMs, DPPs and DPP Marketing Links — each additionally carry four audit columns from the shared `audited` aspect: `createdBy_ID` and `changedBy_ID` (NVARCHAR(36), foreign keys to Users) plus `createdAt` and `lastChange` (TIMESTAMP). They are filled server-side on every create and update and are shown per table in the diagram above. Users, Business Partner Roles and QR Codes are not audited (QR Codes already has its own `created_at`).
 
 ### 4.1 Organisation layer
 
@@ -275,6 +286,18 @@ Constraint: unique on partner_ID and role together.
 | recycled_content_pct | Decimal (5, 2) | DECIMAL(5, 2) | |
 | status | String (12) | NVARCHAR(12) | Defaults to draft |
 
+#### Product Items
+| Column | Type | Database type | Constraints |
+|---|---|---|---|
+| ID | String (36) | NVARCHAR(36) | Primary key |
+| batch_ID | String (36) | NVARCHAR(36) | Required, foreign key to Batches |
+| serial_number | String (60) | NVARCHAR(60) | Required, unique per batch (manufacturer serial) |
+| upi | String (60) | NVARCHAR(60) | Required, globally unique — Unique Product Identifier (ESPR) |
+| manufacturing_date | Date | DATE | |
+| status | String (12) | NVARCHAR(12) | Enum, defaults to active |
+
+An individual serialised unit within a batch. The **UPI** is the ESPR Unique Product Identifier the DPP/QR resolves to (a caller may supply a standardised value; otherwise it is minted automatically) — distinct from the batch-local `serial_number`. On creation the backend auto-creates a unique item-level DPP (`dpp_type = 'item'`) and an active QR code.
+
 #### Product BOMs
 | Column | Type | Database type | Constraints |
 |---|---|---|---|
@@ -299,7 +322,9 @@ Constraint: unique on parent_ID and component_ID together — prevents duplicate
 | ID | String (36) | NVARCHAR(36) | Primary key |
 | product_ID | String (36) | NVARCHAR(36) | Required, foreign key — finished product the DPP describes |
 | batch_ID | String (36) | NVARCHAR(36) | Optional foreign key — narrows the DPP to a specific batch |
-| dpp_type | String (12) | NVARCHAR(12) | Defaults to product |
+| variant_ID | String (36) | NVARCHAR(36) | Optional foreign key — variant the DPP represents |
+| item_ID | String (36) | NVARCHAR(36) | Optional foreign key, unique — 1:1 link to a serialised item |
+| dpp_type | String (12) | NVARCHAR(12) | Defaults to product (product / material / item) |
 | status | String (12) | NVARCHAR(12) | Defaults to draft |
 | visibility | String (8) | NVARCHAR(8) | Defaults to internal |
 | current_version | Integer | INTEGER | Defaults to 1 |
@@ -324,6 +349,22 @@ Constraint: unique on parent_ID and component_ID together — prevents duplicate
 | status | String (10) | NVARCHAR(10) | Defaults to active |
 | created_at | Timestamp | TIMESTAMP | |
 | replaced_at | Timestamp | TIMESTAMP | |
+
+#### DPP Marketing Links
+| Column | Type | Database type | Constraints |
+|---|---|---|---|
+| ID | String (36) | NVARCHAR(36) | Primary key |
+| owning_organization_ID | String (36) | NVARCHAR(36) | Required, foreign key — tenant scope |
+| dpp_ID | String (36) | NVARCHAR(36) | Optional foreign key — null = applies to all of the org's DPPs |
+| link_type | String (20) | NVARCHAR(20) | Enum, defaults to advertisement |
+| title | String (200) | NVARCHAR(200) | Required |
+| url | String (500) | NVARCHAR(500) | Target link |
+| display_order | Integer | INTEGER | Defaults to 0 |
+| is_active | Boolean | BOOLEAN | Defaults to true |
+| valid_from | Date | DATE | Optional start of display window |
+| valid_to | Date | DATE | Optional end of display window |
+
+Marketing / advertising links shown on the public DPP view — either DPP-specific or organisation-wide (`dpp_ID` null). The public read returns active links whose validity window covers the current date, sorted by `display_order`.
 
 ### 4.4 Type mapping reference
 

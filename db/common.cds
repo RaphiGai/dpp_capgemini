@@ -32,6 +32,14 @@ type BatchStatus : String(12) enum {
   archived;
 }
 
+type ProductItemStatus : String(12) enum {
+  active;
+  sold;
+  returned;
+  recycled;
+  archived;
+}
+
 type BOMStatus : String(12) enum {
   active;
   archived;
@@ -48,6 +56,7 @@ type DPPStatus : String(12) enum {
 type DPPType : String(12) enum {
   product;
   material;
+  item;
 }
 
 type Visibility : String(8) enum {
@@ -66,6 +75,15 @@ type ESPRComplianceStatus : String(16) enum {
   in_review;
   compliant;
   non_compliant;
+}
+
+type MarketingLinkType : String(20) enum {
+  advertisement;
+  product_info;
+  care_product;
+  promotion;
+  related_product;
+  other;
 }
 
 type UserRole : String(20) enum {

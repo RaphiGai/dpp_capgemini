@@ -31,7 +31,7 @@ Editable source: [diagrams/solution-context.drawio](diagrams/solution-context.dr
 
 - **ESPR regulation (EU 2024/1781)** — mandatory passport fields for textiles
 - **Market surveillance regulation (EU 2019/1020)** — public authority access without login
-- The MVP covers finished-product DPPs (optionally narrowed to a batch), signed QR tokens, the public token endpoint and recursive hierarchical aggregation over linked sub-DPPs
+- The MVP covers finished-product DPPs (optionally narrowed to a batch, variant or individual serialised item), signed QR tokens, the public token endpoint and recursive hierarchical aggregation over linked sub-DPPs
 
 ---
 
@@ -91,8 +91,9 @@ Both the Approve and the Publish actions run the same readiness check before the
 
 - The product reference must exist
 - The product must have a name, brand, category and fibre composition
-- For item-level passports, a linked product item must be present
-- The unique product identifier on the item must be set
+- The referenced batch, if set, must exist
+
+Item-level passports do not need an extra readiness rule: they are created automatically together with their Product Item and are already linked 1:1 to the product, variant, batch and item (the item's serial number — its unique product identifier — is mandatory at item creation).
 
 ### C.2 Side effects on entering Published
 
@@ -119,8 +120,8 @@ Editable source: [diagrams/sprint1-demo-sequence.drawio](diagrams/sprint1-demo-s
 
 The sequence has three phases:
 
-1. **Create master data** (steps 2 to 7) — create a business partner, two products (one finished good, one material), a bill of materials, a product variant, a batch and a product item
-2. **Passport workflow** (steps 8 and 9) — create the passport, approve it, then publish it (which builds the snapshot and rotates the QR code)
+1. **Create master data** (steps 2 to 7) — create a business partner, two products (one finished good, one material), a bill of materials, a product variant, a batch and a product item (whose unique item-level passport is created automatically)
+2. **Passport workflow** (steps 8 and 9) — approve the passport, then publish it (which builds the snapshot and rotates the QR code)
 3. **Consumer path** (steps 10 to 12) — generate the QR code, print and attach the label, then have a consumer scan it and view the public passport
 
 ---
@@ -140,7 +141,7 @@ The development tenant blocks the assignment of role collections in the platform
 3. The service-level gate checks that the user is authenticated
 4. A global hook rejects the request with an authorisation error if no active user record was resolved, and rejects any write event for standard company users
 5. Per-entity read hooks add a tenant filter to every read for every entity in the tenant-scoped set; reads for an unknown identifier silently return "not found", list reads are scoped to the caller's tenant
-6. Create and update hooks for Products, Business Partners, Users and Organisations enforce that the owning organisation matches the caller's organisation
+6. Create and update hooks for Products, Business Partners, Users and Organisations enforce that the owning organisation matches the caller's organisation; Product Item creation is checked against the owning organisation of its batch's product
 7. Action hooks for the passport lifecycle and the product archiving check ownership before mutation
 
 ### E.3 Capability matrix

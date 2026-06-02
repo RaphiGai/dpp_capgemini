@@ -42,6 +42,7 @@ service DPPService @(
 
   entity ProductVariants       as projection on db.ProductVariants;
   entity Batches               as projection on db.Batches;
+  entity ProductItems          as projection on db.ProductItems;
   entity ProductBOMs           as projection on db.ProductBOMs;
 
   entity DPPs as projection on db.DPPs actions {
@@ -61,6 +62,7 @@ service DPPService @(
   };
 
   entity QRCodes               as projection on db.QRCodes;
+  entity DPPMarketingLinks     as projection on db.DPPMarketingLinks;
 
   function me() returns MeInfo;
 }

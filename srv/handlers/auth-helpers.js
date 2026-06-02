@@ -105,6 +105,7 @@ async function resolveAppUserInline(req) {
   req.user.attr = req.user.attr || {};
   req.user.attr.tenant = org.tenant_id;
   req.user._appOrgId = org.ID;
+  req.user._appUserId = userRow.ID;   // acting Users row — used to stamp audit fields
 }
 
 /**

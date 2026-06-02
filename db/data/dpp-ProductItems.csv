@@ -1,0 +1,3 @@
+ID;batch_ID;serial_number;upi;manufacturing_date;status
+pi-tshirt-0001;batch-2026-05-A;SN-TSH-0001;UPI-TSH-0001;2026-05-15;active
+pi-tshirt-0002;batch-2026-05-A;SN-TSH-0002;UPI-TSH-0002;2026-05-15;sold

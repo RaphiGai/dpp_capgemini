@@ -42,18 +42,25 @@ async function checkDPPReady(dpp) {
  * they are derived live by srv/lib/aggregator on public read.
  */
 async function buildSnapshot(dpp) {
-  const { Products, ProductVariants, Batches, ProductBOMs } = cds.entities('dpp');
+  const { Products, ProductVariants, Batches, ProductItems, ProductBOMs } = cds.entities('dpp');
 
-  const [product, batch] = await Promise.all([
+  const [product, batch, item] = await Promise.all([
     SELECT.one.from(Products).where({ ID: dpp.product_ID }),
-    dpp.batch_ID ? SELECT.one.from(Batches).where({ ID: dpp.batch_ID }) : null
+    dpp.batch_ID ? SELECT.one.from(Batches).where({ ID: dpp.batch_ID }) : null,
+    dpp.item_ID ? SELECT.one.from(ProductItems).where({ ID: dpp.item_ID }) : null
   ]);
 
+  // Variant precedence: explicit dpp.variant link → via batch → none.
   let variant = null;
-  let boms = [];
-  if (batch) {
+  if (dpp.variant_ID) {
+    variant = await SELECT.one.from(ProductVariants).where({ ID: dpp.variant_ID });
+  } else if (batch) {
     variant = await SELECT.one.from(ProductVariants).where({ ID: batch.variant_ID });
-    if (variant) boms = await SELECT.from(ProductBOMs).where({ parent_ID: variant.ID });
+  }
+
+  let boms = [];
+  if (variant) {
+    boms = await SELECT.from(ProductBOMs).where({ parent_ID: variant.ID });
   } else {
     const variants = await SELECT.from(ProductVariants)
       .columns(['ID']).where({ product_ID: dpp.product_ID });
@@ -74,6 +81,7 @@ async function buildSnapshot(dpp) {
     product,
     variant,
     batch,
+    item,
     bom: boms
   };
 }
@@ -234,3 +242,4 @@ module.exports = (srv) => {
 };
 
 module.exports.buildSnapshot = buildSnapshot;
+module.exports.rotateActiveQRCode = rotateActiveQRCode;

@@ -10,6 +10,7 @@ erDiagram
     %% Product layer
     Product          ||--o{ Product_Variant   : "has variants"
     Product_Variant  ||--o{ Batch             : "produced in"
+    Batch            ||--o{ Product_Item      : "serialised into"
     Business_Partner ||--o{ Batch             : "manufactured by"
     Business_Partner ||--o{ Batch             : "supplied by"
     Product_Variant  ||--o{ Product_BOM       : "consumes"
@@ -18,8 +19,12 @@ erDiagram
     %% Passport layer
     Product          ||--o{ Product_Passport  : "described by"
     Batch            ||--o{ Product_Passport  : "narrowed to"
+    Product_Variant  ||--o{ Product_Passport  : "variant shown on"
+    Product_Item     ||--|| Product_Passport  : "carries unique DPP"
     Product_Passport ||--o{ QR_Code           : "QR history"
-    Product_BOM      }o--o| Product_Passport  : "internal sub-DPP"
+    Product_BOM      }o--o| Product_Passport  : "sub-DPP"
+    Product_Passport ||--o{ DPP_Marketing_Link : "shows ad/info"
+    Organisation     ||--o{ DPP_Marketing_Link : "org-wide campaign"
 
     Organisation {
         text Identifier              PK
@@ -80,6 +85,14 @@ erDiagram
         number Recycled_content
     }
 
+    Product_Item {
+        text Identifier              PK
+        text Serial_number           UK
+        text UPI                     UK
+        date Manufacturing_date
+        text Status
+    }
+
     Product_BOM {
         text Identifier              PK
         number Quantity
@@ -91,6 +104,7 @@ erDiagram
 
     Product_Passport {
         text Identifier              PK
+        text Passport_type
         text Status
         text Visibility
         text Signed_token            UK
@@ -102,4 +116,15 @@ erDiagram
         text Identifier              PK
         text Encoded_value
         text Lifecycle_status
+    }
+
+    DPP_Marketing_Link {
+        text Identifier              PK
+        text Link_type
+        text Title
+        text URL
+        number Display_order
+        boolean Active
+        date Valid_from
+        date Valid_to
     }
