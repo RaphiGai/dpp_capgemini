@@ -110,3 +110,15 @@ entity ProductBOMs : identified, audited {
 }
 
 annotate ProductBOMs with @assert.unique : { edge : [parent, component] };
+
+// ----- Per-batch component sourcing -----
+// Which supplier delivered each BOM component for a specific batch. Suppliers can
+// differ per production run, so this is recorded per (batch, BOM line) rather than
+// on the variant-level BOM. One row per (batch, bom).
+entity BatchComponents : identified {
+  batch    : Association to Batches     not null;
+  bom      : Association to ProductBOMs not null;
+  supplier : Association to BusinessPartners;
+}
+
+annotate BatchComponents with @assert.unique : { per_batch_bom : [batch, bom] };

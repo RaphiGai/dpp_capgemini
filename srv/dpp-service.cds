@@ -44,6 +44,7 @@ service DPPService @(
   entity Batches               as projection on db.Batches;
   entity ProductItems          as projection on db.ProductItems;
   entity ProductBOMs           as projection on db.ProductBOMs;
+  entity BatchComponents       as projection on db.BatchComponents;
 
   entity DPPs as projection on db.DPPs actions {
     @Common.SideEffects: { TargetProperties: ['status', 'approved_at'] }

@@ -28,6 +28,7 @@ const TENANT_ANCHORS = {
   Batches:              'variant.product.owning_organization_ID',
   ProductItems:         'batch.variant.product.owning_organization_ID',
   ProductBOMs:          'parent.product.owning_organization_ID',
+  BatchComponents:      'batch.variant.product.owning_organization_ID',
   DPPs:                 'product.owning_organization_ID',
   QRCodes:              'dpp.product.owning_organization_ID',
   DPPMarketingLinks:    'owning_organization_ID'
