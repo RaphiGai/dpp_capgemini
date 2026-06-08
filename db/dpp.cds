@@ -6,7 +6,7 @@ using {
   dpp.QRCodeStatus,
   dpp.URL
 } from './common';
-using { dpp.Products, dpp.Batches } from './product';
+using { dpp.Products, dpp.Batches, dpp.ProductItems } from './product';
 
 namespace dpp;
 
@@ -17,6 +17,7 @@ namespace dpp;
 entity DPPs : identified {
   product             : Association to Products not null;
   batch               : Association to Batches;
+  item                : Association to ProductItems;
   dpp_type            : DPPType     default 'product';
   status              : DPPStatus   default 'draft';
   visibility          : Visibility  default 'internal';

@@ -56,6 +56,14 @@ entity ProductVariants : identified {
 
 annotate ProductVariants with @assert.unique : { sku_per_product : [sku, product] };
 
+// ----- Product items (individual serialised units within a batch) -----
+entity ProductItems : identified {
+  batch         : Association to Batches not null;
+  serial_number : String(40);
+  upi           : String(40);
+  status        : String(10) enum { active; recalled; retired; } default 'active';
+}
+
 // ----- Batch level (Sheet 2 R8) -----
 entity Batches : identified {
   variant              : Association to ProductVariants not null;
@@ -68,6 +76,7 @@ entity Batches : identified {
   co2_footprint_kg     : Decimal(10, 3);
   recycled_content_pct : Decimal(5, 2);
   status               : BatchStatus default 'draft';
+  items                : Association to many ProductItems on items.batch = $self;
 }
 
 annotate Batches with @assert.unique : { batch_per_variant : [batch_number, variant] };

@@ -62,5 +62,7 @@ service DPPService @(
 
   entity QRCodes               as projection on db.QRCodes;
 
+  entity ProductItems          as projection on db.ProductItems;
+
   function me() returns MeInfo;
 }
