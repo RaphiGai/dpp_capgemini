@@ -1,6 +1,7 @@
 %%{init: {'theme':'neutral', 'themeVariables': { 'fontSize': '13px'}}}%%
 stateDiagram-v2
     [*] --> draft : POST /DPPs
+    [*] --> draft : auto-created with a ProductItem<br/>(dpp_type='item', qr_token + active QRCode)
 
     draft --> approved : approveDPP()<br/>(mandatory fields OK)
     draft --> in_review : manual transition<br/>(future workflow)
@@ -32,6 +33,11 @@ stateDiagram-v2
         Validation gate (checkDPPReady):
         • product reference exists
         • product.{name, brand, category, fibre_composition} not null
-        • item_ID present for granularity='item'
-        • ProductItem.upi not null
+        • referenced batch exists (when batch_ID set)
+    end note
+
+    note left of draft
+        Item-level DPPs (dpp_type='item') are created
+        automatically when a ProductItem is added and are
+        linked 1:1 to product / variant / batch / item.
     end note

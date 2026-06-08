@@ -10,6 +10,7 @@ erDiagram
     %% Product layer
     products           ||--o{ product_variants       : "product_ID"
     product_variants   ||--o{ batches                : "variant_ID"
+    batches            ||--o{ product_items          : "batch_ID"
     business_partners  ||--o{ batches                : "factory_ID"
     business_partners  ||--o{ batches                : "supplier_ID"
     product_variants   ||--o{ product_boms           : "parent_ID"
@@ -18,8 +19,12 @@ erDiagram
     %% Passport layer
     products           ||--o{ dpps                   : "product_ID"
     batches            ||--o{ dpps                   : "batch_ID"
+    product_variants   ||--o{ dpps                   : "variant_ID"
+    product_items      ||--|| dpps                   : "item_ID (unique)"
     dpps               ||--o{ qr_codes               : "dpp_ID"
     product_boms       }o--o| dpps                   : "sub_dpp_ID"
+    dpps               ||--o{ dpp_marketing_links    : "dpp_ID (optional)"
+    organizations      ||--o{ dpp_marketing_links    : "owning_organization_ID"
 
     organizations {
         nvarchar_36  ID                   PK
@@ -32,6 +37,10 @@ erDiagram
         nvarchar_254 contact_email
         nvarchar_64  tenant_id            UK "Required"
         boolean      is_platform_tenant      "Default false"
+        nvarchar_36  createdBy_ID         FK "Audit: acting user"
+        timestamp    createdAt               "Audit"
+        nvarchar_36  changedBy_ID         FK "Audit: acting user"
+        timestamp    lastChange              "Audit"
     }
 
     users {
@@ -55,6 +64,10 @@ erDiagram
         nvarchar_40  identifier              "GLN, VAT or DUNS"
         boolean      archived                "Default false"
         nvarchar_36  owning_organization_ID FK "Required"
+        nvarchar_36  createdBy_ID         FK "Audit: acting user"
+        timestamp    createdAt               "Audit"
+        nvarchar_36  changedBy_ID         FK "Audit: acting user"
+        timestamp    lastChange              "Audit"
     }
 
     business_partner_roles {
@@ -81,6 +94,10 @@ erDiagram
         nvarchar_16  espr_compliance         "enum"
         nvarchar_12  status                  "enum, Default draft"
         nvarchar_36  owning_organization_ID FK "Required"
+        nvarchar_36  createdBy_ID         FK "Audit: acting user"
+        timestamp    createdAt               "Audit"
+        nvarchar_36  changedBy_ID         FK "Audit: acting user"
+        timestamp    lastChange              "Audit"
     }
 
     product_variants {
@@ -92,6 +109,10 @@ erDiagram
         integer      weight_g
         nvarchar_10  status                  "enum, Default active"
         nvarchar_36  product_ID           FK "Required"
+        nvarchar_36  createdBy_ID         FK "Audit: acting user"
+        timestamp    createdAt               "Audit"
+        nvarchar_36  changedBy_ID         FK "Audit: acting user"
+        timestamp    lastChange              "Audit"
     }
 
     batches {
@@ -106,6 +127,23 @@ erDiagram
         nvarchar_36   variant_ID          FK "Required"
         nvarchar_36   factory_ID          FK "to business_partners"
         nvarchar_36   supplier_ID         FK "to business_partners"
+        nvarchar_36   createdBy_ID        FK "Audit: acting user"
+        timestamp     createdAt              "Audit"
+        nvarchar_36   changedBy_ID        FK "Audit: acting user"
+        timestamp     lastChange             "Audit"
+    }
+
+    product_items {
+        nvarchar_36   ID                  PK
+        nvarchar_60   serial_number          "Required, Unique per batch"
+        nvarchar_60   upi                 UK "Required, globally unique (ESPR UPI)"
+        date          manufacturing_date
+        nvarchar_12   status                 "enum, Default active"
+        nvarchar_36   batch_ID            FK "Required"
+        nvarchar_36   createdBy_ID        FK "Audit: acting user"
+        timestamp     createdAt              "Audit"
+        nvarchar_36   changedBy_ID        FK "Audit: acting user"
+        timestamp     lastChange             "Audit"
     }
 
     product_boms {
@@ -119,11 +157,15 @@ erDiagram
         nvarchar_36   component_ID        FK "to products, Required"
         nvarchar_36   sub_dpp_ID          FK "to dpps, optional internal sub-DPP"
         nvarchar_500  external_dpp_url       "optional external supplier-DPP link"
+        nvarchar_36   createdBy_ID        FK "Audit: acting user"
+        timestamp     createdAt              "Audit"
+        nvarchar_36   changedBy_ID        FK "Audit: acting user"
+        timestamp     lastChange             "Audit"
     }
 
     dpps {
         nvarchar_36   ID                  PK
-        nvarchar_12   dpp_type               "enum, Default product"
+        nvarchar_12   dpp_type               "enum product/material/item, Default product"
         nvarchar_12   status                 "enum, Default draft"
         nvarchar_8    visibility             "enum, Default internal"
         integer       current_version        "Default 1"
@@ -139,6 +181,12 @@ erDiagram
         nclob         storytelling           "JSON array"
         nvarchar_36   product_ID          FK "Required"
         nvarchar_36   batch_ID            FK "Optional, narrows DPP to specific batch"
+        nvarchar_36   variant_ID          FK "Optional, which variant the DPP represents"
+        nvarchar_36   item_ID             FK "Optional, UK — 1:1 serialised item DPP"
+        nvarchar_36   createdBy_ID        FK "Audit: acting user"
+        timestamp     createdAt              "Audit"
+        nvarchar_36   changedBy_ID        FK "Audit: acting user"
+        timestamp     lastChange             "Audit"
     }
 
     qr_codes {
@@ -149,4 +197,21 @@ erDiagram
         timestamp     created_at
         timestamp     replaced_at
         nvarchar_36   dpp_ID              FK "Required"
+    }
+
+    dpp_marketing_links {
+        nvarchar_36   ID                  PK
+        nvarchar_20   link_type              "enum, Default advertisement"
+        nvarchar_200  title                  "Required"
+        nvarchar_500  url
+        integer       display_order          "Default 0"
+        boolean       is_active              "Default true"
+        date          valid_from
+        date          valid_to
+        nvarchar_36   owning_organization_ID FK "Required, tenant scope"
+        nvarchar_36   dpp_ID              FK "Optional; null = all org DPPs"
+        nvarchar_36   createdBy_ID        FK "Audit: acting user"
+        timestamp     createdAt              "Audit"
+        nvarchar_36   changedBy_ID        FK "Audit: acting user"
+        timestamp     lastChange             "Audit"
     }

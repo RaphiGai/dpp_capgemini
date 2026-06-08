@@ -123,7 +123,9 @@ async function loadDPPContext(dppId) {
     : null;
 
   let variantIds;
-  if (batch) {
+  if (dpp.variant_ID) {
+    variantIds = [dpp.variant_ID];
+  } else if (batch) {
     variantIds = [batch.variant_ID];
   } else {
     const variants = await SELECT.from(ProductVariants)

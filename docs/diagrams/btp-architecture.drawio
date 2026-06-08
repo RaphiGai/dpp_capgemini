@@ -1,6 +1,6 @@
 <mxfile host="app.diagrams.net">
   <diagram name="BTP Architecture" id="btp-arch">
-    <mxGraphModel dx="1885" dy="1036" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1500" pageHeight="1000" math="0" shadow="0">
+    <mxGraphModel dx="2934" dy="1137" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1500" pageHeight="1000" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -76,7 +76,7 @@
         <mxCell id="mod-srv-title" parent="1" style="text;html=1;fontSize=12;fontStyle=1;fontColor=#0a6ed1;align=left;verticalAlign=top;spacingLeft=14;spacingTop=8;" value="Backend Service — Node.js and SAP Cloud Application Programming Model" vertex="1">
           <mxGeometry height="26" width="980" x="120" y="594" as="geometry" />
         </mxCell>
-        <mxCell id="odata" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0a6ed1;strokeColor=#0854A0;fontColor=#FFFFFF;fontSize=11;align=left;spacingLeft=12;spacingTop=4;" value="OData V4 Service&lt;br&gt;&lt;br&gt;• 11 entity projections&lt;br&gt;• 4 lifecycle actions on the passport&lt;br&gt;• 1 QR-image function on the passport&lt;br&gt;• Caller identity endpoint for the frontend" vertex="1">
+        <mxCell id="odata" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0a6ed1;strokeColor=#0854A0;fontColor=#FFFFFF;fontSize=11;align=left;spacingLeft=12;spacingTop=4;" value="OData V4 Service&lt;br&gt;&lt;br&gt;• entity projections&lt;br&gt;• lifecycle actions passport (create - validate - publish - archivate)&lt;br&gt;• QR-image function on the passport&lt;br&gt;• Caller identity endpoint for the frontend" vertex="1">
           <mxGeometry height="160" width="340" x="150" y="630" as="geometry" />
         </mxCell>
         <mxCell id="rest" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0854A0;strokeColor=#063878;fontColor=#FFFFFF;fontSize=11;align=left;spacingLeft=12;spacingTop=4;" value="Public REST API&lt;br&gt;&lt;br&gt;• Public consumer view by token&lt;br&gt;• Printable QR PNG by token&lt;br&gt;• Health check&lt;div&gt;&lt;br/&gt;&lt;/div&gt;" vertex="1">

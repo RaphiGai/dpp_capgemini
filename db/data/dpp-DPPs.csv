@@ -1,2 +1,5 @@
-ID;product_ID;batch_ID;item_ID;dpp_type;status;visibility;current_version;qr_token;qr_payload_url;public_url;approved_at;published_at;valid_from
-dpp-cotton;prod-mat-cotton;batch-cotton-2026-04;;product;published;public;1;seed-token-cotton;/public/dpp/seed-token-cotton;/dpp/dpp-cotton;2026-04-15T10:00:00Z;2026-04-15T12:00:00Z;2026-04-15
+ID;product_ID;batch_ID;variant_ID;item_ID;dpp_type;status;visibility;current_version;qr_token;qr_payload_url;public_url;approved_at;published_at;valid_from
+dpp-12345;prod-tshirt-classic;batch-2026-05-A;;;product;published;public;1;seed-token-tshirt-12345;/public/dpp/seed-token-tshirt-12345;/dpp/dpp-12345;2026-05-17T10:00:00Z;2026-05-17T12:00:00Z;2026-05-17
+dpp-cotton;prod-mat-cotton;batch-cotton-2026-04;;;product;published;public;1;seed-token-cotton;/public/dpp/seed-token-cotton;/dpp/dpp-cotton;2026-04-15T10:00:00Z;2026-04-15T12:00:00Z;2026-04-15
+dpp-item-tshirt-0001;prod-tshirt-classic;batch-2026-05-A;var-tshirt-blue-m;pi-tshirt-0001;item;published;public;1;seed-token-item-0001;/public/dpp/seed-token-item-0001;/dpp/dpp-item-tshirt-0001;2026-05-17T10:00:00Z;2026-05-17T12:00:00Z;2026-05-17
+dpp-item-tshirt-0002;prod-tshirt-classic;batch-2026-05-A;var-tshirt-blue-m;pi-tshirt-0002;item;draft;internal;1;seed-token-item-0002;/public/dpp/seed-token-item-0002;;;;

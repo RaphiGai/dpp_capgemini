@@ -3,9 +3,11 @@
 const cds = require('@sap/cds');
 const authHelpers = require('./handlers/auth-helpers');
 
-const productHandlers = require('./handlers/product-handlers');
-const dppHandlers     = require('./handlers/dpp-handlers');
-const meHandler       = require('./handlers/me-handler');
+const productHandlers     = require('./handlers/product-handlers');
+const productItemHandlers = require('./handlers/product-item-handlers');
+const dppHandlers         = require('./handlers/dpp-handlers');
+const marketingHandlers   = require('./handlers/marketing-handlers');
+const meHandler           = require('./handlers/me-handler');
 
 /**
  * App-internal RBAC + tenant isolation is enforced here in handlers instead
@@ -24,9 +26,12 @@ const TENANT_ANCHORS = {
   Products:             'owning_organization_ID',
   ProductVariants:      'product.owning_organization_ID',
   Batches:              'variant.product.owning_organization_ID',
+  ProductItems:         'batch.variant.product.owning_organization_ID',
   ProductBOMs:          'parent.product.owning_organization_ID',
+  BatchComponents:      'batch.variant.product.owning_organization_ID',
   DPPs:                 'product.owning_organization_ID',
-  QRCodes:              'dpp.product.owning_organization_ID'
+  QRCodes:              'dpp.product.owning_organization_ID',
+  DPPMarketingLinks:    'owning_organization_ID'
 };
 
 module.exports = (srv) => {
@@ -42,6 +47,33 @@ module.exports = (srv) => {
     srv.before('READ', entity, async (req) => {
       const orgId = await authHelpers.requireActiveUser(req);
       req.query.where(`${path} =`, orgId);
+    });
+  }
+
+  // ----- Audit stamping (catalogue: CreatedBy / ChangedBy / CreatedAt / LastChange) -----
+  // The acting user (req.user._appUserId) and timestamps are stamped server-side
+  // for the eight catalogue business objects; client-supplied values are ignored.
+  const AUDITED = [
+    'Organizations', 'BusinessPartners', 'Products', 'ProductVariants',
+    'Batches', 'ProductItems', 'ProductBOMs', 'DPPs', 'DPPMarketingLinks'
+  ];
+  for (const entity of AUDITED) {
+    srv.before('CREATE', entity, async (req) => {
+      // Resolve the acting user here: entity-specific before handlers run
+      // ahead of the catch-all before('*') gate, so _appUserId may not be set
+      // yet. requireActiveUser is idempotent and populates it.
+      await authHelpers.requireActiveUser(req);
+      const uid = req.user._appUserId || null;
+      const now = new Date().toISOString();
+      req.data.createdAt = now;
+      req.data.lastChange = now;
+      req.data.createdBy_ID = uid;
+      req.data.changedBy_ID = uid;
+    });
+    srv.before('UPDATE', entity, async (req) => {
+      await authHelpers.requireActiveUser(req);
+      req.data.lastChange = new Date().toISOString();
+      req.data.changedBy_ID = req.user._appUserId || null;
     });
   }
 
@@ -68,6 +100,8 @@ module.exports = (srv) => {
   });
 
   productHandlers(srv);
+  productItemHandlers(srv);
   dppHandlers(srv);
+  marketingHandlers(srv);
   meHandler(srv);
 };
