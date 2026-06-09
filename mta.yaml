@@ -45,6 +45,10 @@ modules:
       buildpack: nodejs_buildpack
       memory: 256M
       disk-quota: 512M
+    properties:
+      # Drop HANA objects that are no longer part of the model (e.g. the removed
+      # BatchComponents per-(batch,bom) unique index) so schema migrations apply cleanly.
+      HDI_DEPLOY_OPTIONS: '{"auto_undeploy":true}'
     requires:
       - name: dpp-db
 
