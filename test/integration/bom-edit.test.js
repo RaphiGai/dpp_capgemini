@@ -82,3 +82,22 @@ describe('External BOM component without an internal product', () => {
     ).rejects.toMatchObject({ response: { status: 400 } });
   });
 });
+
+describe('ProductVariant edit (PATCH) — image_url', () => {
+  test('saving a variant with the new image_url field succeeds', async () => {
+    const res = await PATCH(
+      "/odata/v4/dpp/ProductVariants('var-tshirt-blue-m')",
+      {
+        color: 'Blue',
+        size: 'M',
+        sku: 'TSHIRT-BLUE-M',
+        weight_g: 180,
+        image_url: 'https://example.com/tshirt-blue.jpg',
+        status: 'active'
+      },
+      alice
+    );
+    expect(res.status).toBe(200);
+    expect(res.data.image_url).toBe('https://example.com/tshirt-blue.jpg');
+  });
+});

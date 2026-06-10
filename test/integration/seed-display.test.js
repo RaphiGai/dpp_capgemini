@@ -1,22 +1,28 @@
 'use strict';
 
 // End-to-end check of the shipped seed data: both finished products must resolve
-// cleanly through the public consumer endpoint using their SEED QR tokens (signed
-// with QR_TOKEN_HMAC_SECRET), with linked component passports + rolled-up footprint.
-// NOTE: the seed tokens are signed with the dev default secret
-// (change-me-to-a-long-random-string). If that secret changes, regenerate the seed
-// tokens (db/data/dpp-DPPs.csv + dpp-QRCodes.csv).
+// cleanly through the public consumer endpoint, with linked component passports +
+// rolled-up footprint. The QR token is minted at runtime (with whatever
+// QR_TOKEN_HMAC_SECRET the environment uses) and written onto the seed DPP, so the
+// test does not depend on the secret the seed tokens were signed with.
 
 const cds = require('@sap/cds');
+const tokens = require('../../srv/lib/token');
 
 const { axios } = cds.test().in(__dirname + '/../..');
 
-const TSHIRT_TOKEN = 'e1fdd917-e3e5-4b53-acfa-bbd55d9666e4.RZsqxfAj5IG6WTxWBPqOj9P1SgoCnvtJGElVhTzJolA';
-const JACKET_TOKEN = 'd054bcef-1b87-485f-929c-659e76654710.jiayKDa-HXcHe8J7dLnp4XtTpG9H2vqZrZinmx0cvNI';
+// Open a seeded (published + public) DPP via a freshly-signed token.
+async function openByDppId(dppId) {
+  const { DPPs } = cds.entities('dpp');
+  const token = tokens.generate();
+  await UPDATE(DPPs).set({ qr_token: token }).where({ ID: dppId });
+  const { data } = await axios.get(`/public/dpp/${token}`);
+  return data;
+}
 
 describe('Seed data: two finished products render via their public DPP', () => {
   test('Classic T-Shirt — cotton (internal), elastane + polybag (external), footprint rolled up', async () => {
-    const { data } = await axios.get(`/public/dpp/${TSHIRT_TOKEN}`);
+    const data = await openByDppId('dpp-12345');
     expect(data.product.name).toBe('Classic T-Shirt');
 
     const cotton = data.materials.find((m) => m.component_ID === 'prod-mat-cotton');
@@ -36,7 +42,7 @@ describe('Seed data: two finished products render via their public DPP', () => {
   });
 
   test('Eco Denim Jacket — denim (2 batches avg), lining, button & box internal, zipper external', async () => {
-    const { data } = await axios.get(`/public/dpp/${JACKET_TOKEN}`);
+    const data = await openByDppId('dpp-jacket');
     expect(data.product.name).toBe('Eco Denim Jacket');
 
     // Denim sourced from two component batches → link is the first item's DPP of one of them.
