@@ -47,6 +47,13 @@ describe('Public consumer DTO with recursive BOM tree', () => {
     expect(data.batch.batch_number).toBe('2026-05-A');
     expect(Array.isArray(data.materials)).toBe(true);
 
+    // Storytelling is a product-level property, parsed into an array for the consumer.
+    expect(Array.isArray(data.product.storytelling)).toBe(true);
+    expect(data.product.storytelling.length).toBeGreaterThan(0);
+    expect(data.product.storytelling[0].title).toBeTruthy();
+    // Colour-correct image comes from the variant.
+    expect(data.variant.image_url).toMatch(/^https?:\/\//);
+
     const cotton = data.materials.find((m) => m.name === 'Organic Cotton Fabric');
     expect(cotton).toBeDefined();
     expect(Number(cotton.quantity)).toBe(171);

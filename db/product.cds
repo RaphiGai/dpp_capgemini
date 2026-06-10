@@ -35,6 +35,7 @@ entity Products : identified, audited {
   substances_of_concern : String(500);                       // catalogue Sheet 3 R37 (Text)
   espr_compliance       : ESPRComplianceStatus default 'draft';
   status                : ProductStatus        default 'draft';
+  storytelling          : LargeString;                         // JSON array [{title, body}] — consumer story (per product)
 
   variants : Association to many ProductVariants on variants.product = $self;
 }
@@ -49,6 +50,7 @@ entity ProductVariants : identified, audited {
   sku      : String(40);
   gtin     : GTIN;
   weight_g : Integer;
+  image_url : URL;                            // colour-correct product image (consumer story / hero)
   status   : VariantStatus default 'active';
 
   batches : Association to many Batches    on batches.variant = $self;

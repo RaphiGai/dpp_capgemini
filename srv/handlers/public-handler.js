@@ -90,9 +90,10 @@ async function expandBomTree(variantId, productsById, bomsByParent, overrides = 
 }
 
 function toConsumerDTO(dpp, ctx) {
+  // Storytelling is a product-level property (shown in the consumer story).
   let storytelling = [];
-  if (dpp.storytelling) {
-    try { storytelling = JSON.parse(dpp.storytelling); } catch { storytelling = []; }
+  if (ctx.product?.storytelling) {
+    try { storytelling = JSON.parse(ctx.product.storytelling); } catch { storytelling = []; }
   }
   return {
     id: dpp.ID,
@@ -117,6 +118,7 @@ function toConsumerDTO(dpp, ctx) {
           country_of_origin: ctx.product.country_of_origin,
           substances_of_concern: ctx.product.substances_of_concern,
           espr_compliance: ctx.product.espr_compliance,
+          storytelling,
         }
       : null,
     variant: ctx.variant
@@ -125,6 +127,7 @@ function toConsumerDTO(dpp, ctx) {
           size: ctx.variant.size,
           sku: ctx.variant.sku,
           gtin: ctx.variant.gtin,
+          image_url: ctx.variant.image_url,
         }
       : null,
     batch: ctx.batch
@@ -138,7 +141,6 @@ function toConsumerDTO(dpp, ctx) {
       : null,
     materials: ctx.materialsTree,
     aggregated: ctx.aggregated,
-    storytelling,
     marketing: ctx.marketing || [],
   };
 }
