@@ -11,12 +11,15 @@ const { randomUUID, createHmac, timingSafeEqual } = require('crypto');
  * customers can keep using tokens in printed QR codes even if their DB IDs
  * leak. The secret comes from QR_TOKEN_HMAC_SECRET — see .env.example.
  */
+// Dev/test fallback so a fresh clone (no local .env) works out of the box; a real
+// secret is still mandatory in production.
+const DEV_QR_SECRET = 'dpp-dev-qr-hmac-secret-do-not-use-in-production';
+
 function getSecret() {
   const s = process.env.QR_TOKEN_HMAC_SECRET;
-  if (!s || s.length < 16) {
-    throw new Error('QR_TOKEN_HMAC_SECRET must be set to at least 16 characters');
-  }
-  return s;
+  if (s && s.length >= 16) return s;
+  if (process.env.NODE_ENV !== 'production') return DEV_QR_SECRET;
+  throw new Error('QR_TOKEN_HMAC_SECRET must be set to at least 16 characters');
 }
 
 function base64url(buf) {

@@ -20,12 +20,15 @@ const { createHmac, timingSafeEqual } = require('crypto');
 const FULL_TTL_SECONDS = 8 * 60 * 60;
 const PWRESET_TTL_SECONDS = 15 * 60;
 
+// Dev/test fallback so a fresh clone (no local .env, which is gitignored) can log
+// in out of the box. In production a real SESSION_SECRET is still mandatory.
+const DEV_SESSION_SECRET = 'dpp-dev-session-secret-do-not-use-in-production';
+
 function getSecret() {
   const s = process.env.SESSION_SECRET;
-  if (!s || s.length < 16) {
-    throw new Error('SESSION_SECRET must be set to at least 16 characters');
-  }
-  return s;
+  if (s && s.length >= 16) return s;
+  if (process.env.NODE_ENV !== 'production') return DEV_SESSION_SECRET;
+  throw new Error('SESSION_SECRET must be set to at least 16 characters');
 }
 
 function base64url(buf) {
