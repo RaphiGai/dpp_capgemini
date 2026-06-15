@@ -29,7 +29,7 @@ function getTenant(req) {
 function requireTenant(req) {
   const tenantId = getTenant(req);
   if (!tenantId) {
-    req.reject(403, 'Missing tenant claim on user token.');
+    req.reject(403, 'Your session is invalid. Please sign in again.');
   }
   return tenantId;
 }
@@ -68,7 +68,8 @@ async function getUserOrg(req) {
   const { Organizations } = cds.entities('dpp');
   const org = await SELECT.one.from(Organizations).where({ tenant_id: tenantId });
   if (!org) {
-    req.reject(403, `No organization found for tenant '${tenantId}'.`);
+    console.warn(`[auth] no organization found for tenant '${tenantId}'`);
+    req.reject(403, 'Your account is not assigned to an organization. Please contact your administrator.');
   }
   return org;
 }
@@ -130,7 +131,7 @@ async function requireActiveUser(req) {
   const role = getAppRole(req);
   const tenant = getTenant(req);
   if (!role || !tenant) {
-    req.reject(403, 'No active user record — your account is not registered in the DPP Users table.');
+    req.reject(403, 'Your account is not active. Please contact your administrator.');
   }
   if (req.user._appOrgId) return req.user._appOrgId;
   const org = await getUserOrg(req);
@@ -141,7 +142,8 @@ async function requireActiveUser(req) {
 function requireRole(req, ...roles) {
   const role = getAppRole(req);
   if (!roles.includes(role)) {
-    req.reject(403, `Insufficient role — requires one of: ${roles.join(', ')}.`);
+    console.warn(`[auth] insufficient role '${role}' — requires one of: ${roles.join(', ')}`);
+    req.reject(403, "You don't have permission to perform this action.");
   }
 }
 
@@ -162,14 +164,18 @@ function isWriteEvent(req) {
 async function requireOwningOrg(req, entityName, id, ownerPath = 'owning_organization_ID') {
   const callerOrgId = await requireActiveUser(req);
   const entity = cds.entities('dpp')[entityName];
-  if (!entity) req.reject(500, `Unknown entity '${entityName}'.`);
+  if (!entity) {
+    console.error(`[auth] requireOwningOrg called with unknown entity '${entityName}'`);
+    req.reject(500, 'An internal error occurred.');
+  }
   const row = await SELECT.one
     .from(entity)
     .columns(`${ownerPath} as ownerOrgId`)
     .where({ ID: id });
-  if (!row) req.reject(404, `${entityName} '${id}' not found.`);
+  if (!row) req.reject(404, 'The requested item could not be found.');
   if (row.ownerOrgId !== callerOrgId) {
-    req.reject(403, `${entityName} '${id}' belongs to a different organization.`);
+    console.warn(`[auth] ${entityName} '${id}' belongs to a different organization`);
+    req.reject(403, "You don't have permission to access this item.");
   }
 }
 

@@ -1,7 +1,7 @@
 'use strict';
 
 const cds = require('@sap/cds');
-const { randomUUID } = require('crypto');
+const { randomUUID, createHash } = require('crypto');
 const tokens = require('../lib/token');
 const { requireOwningOrg } = require('./auth-helpers');
 const { aggregate } = require('../lib/aggregator');
@@ -13,25 +13,33 @@ const DPP_OWNER_PATH = 'product.owning_organization_ID';
  * human-readable error strings — empty means OK to proceed. Replaces the old
  * ValidationWarnings persistence: errors are reported inline via req.reject.
  */
+// Friendly labels for the mandatory product fields (no internal column names in user text).
+const PRODUCT_FIELD_LABELS = {
+  name: 'Name',
+  brand: 'Brand',
+  category: 'Category',
+  fibre_composition: 'Fibre composition'
+};
+
 async function checkDPPReady(dpp) {
   const { Products, Batches } = cds.entities('dpp');
   const errors = [];
 
   if (!dpp.product_ID) {
-    errors.push('DPP must reference a product.');
+    errors.push('The DPP must reference a product.');
   } else {
     const product = await SELECT.one.from(Products).where({ ID: dpp.product_ID });
     if (!product) {
-      errors.push(`Referenced product '${dpp.product_ID}' does not exist.`);
+      errors.push('The referenced product does not exist.');
     } else {
       for (const f of ['name', 'brand', 'category', 'fibre_composition']) {
-        if (!product[f]) errors.push(`Product field '${f}' is required.`);
+        if (!product[f]) errors.push(`Product field "${PRODUCT_FIELD_LABELS[f]}" is required.`);
       }
     }
   }
   if (dpp.batch_ID) {
     const batch = await SELECT.one.from(Batches).where({ ID: dpp.batch_ID });
-    if (!batch) errors.push(`Referenced batch '${dpp.batch_ID}' does not exist.`);
+    if (!batch) errors.push('The referenced batch does not exist.');
   }
   return errors;
 }
@@ -110,6 +118,13 @@ async function rotateActiveQRCode(dppId, qrValue, qrImageUrl) {
 module.exports = (srv) => {
   const { DPPs } = srv.entities;
 
+  // ----- DPPVersions: immutable audit trail (US5.9) -----
+  // Reject every OData write; rows are inserted server-side on publish (see publishDPP),
+  // which targets the DB entity and therefore bypasses this gate.
+  srv.before(['CREATE', 'UPDATE', 'DELETE'], 'DPPVersions', (req) => {
+    req.reject(403, 'DPP versions are immutable and cannot be modified.');
+  });
+
   // ----- Defaults on CREATE -----
 
   srv.before('CREATE', DPPs, async (req) => {
@@ -133,9 +148,9 @@ module.exports = (srv) => {
     const id = req.params[req.params.length - 1].ID;
     await requireOwningOrg(req, 'DPPs', id, DPP_OWNER_PATH);
     const dpp = await SELECT.one.from(DPPs).where({ ID: id });
-    if (!dpp) req.reject(404, `DPP '${id}' not found.`);
+    if (!dpp) req.reject(404, 'DPP not found.');
 
-    if (dpp.status === 'archived') req.reject(400, `DPP '${id}' is archived.`);
+    if (dpp.status === 'archived') req.reject(400, 'This DPP is archived.');
     if (dpp.status !== 'draft' && dpp.status !== 'in_review') return dpp;
 
     const errors = await checkDPPReady(dpp);
@@ -152,10 +167,11 @@ module.exports = (srv) => {
 
   srv.on('publishDPP', DPPs, async (req) => {
     const id = req.params[req.params.length - 1].ID;
+    const changeReason = req.data.change_reason || null;
     await requireOwningOrg(req, 'DPPs', id, DPP_OWNER_PATH);
     const dpp = await SELECT.one.from(DPPs).where({ ID: id });
-    if (!dpp) req.reject(404, `DPP '${id}' not found.`);
-    if (dpp.status === 'archived') req.reject(400, `DPP '${id}' is archived and cannot be published.`);
+    if (!dpp) req.reject(404, 'DPP not found.');
+    if (dpp.status === 'archived') req.reject(400, 'This DPP is archived and cannot be published.');
 
     const errors = await checkDPPReady(dpp);
     if (errors.length) req.reject(400, `DPP cannot be published: ${errors.join(' | ')}`);
@@ -180,10 +196,25 @@ module.exports = (srv) => {
     }).where({ ID: id });
 
     const draft = await SELECT.one.from(DPPs).where({ ID: id });
-    const snapshot = await buildSnapshot(draft);
+    const snapshotJson = JSON.stringify(await buildSnapshot(draft));
     await UPDATE(DPPs)
-      .set({ aggregated_snapshot: JSON.stringify(snapshot) })
+      .set({ aggregated_snapshot: snapshotJson })
       .where({ ID: id });
+
+    // US5.9 — append an immutable version record: the frozen snapshot, the change
+    // reason and a content hash for tamper evidence. Inserted on the DB entity so it
+    // bypasses the read-only OData gate below.
+    const { DPPVersions } = cds.entities('dpp');
+    await INSERT.into(DPPVersions).entries({
+      ID: randomUUID(),
+      dpp_ID: id,
+      version_number: nextVersion,
+      snapshot_date: now,
+      change_reason: changeReason,
+      changed_by_ID: req.user._appUserId || null,
+      snapshot_data: snapshotJson,
+      content_hash: createHash('sha256').update(snapshotJson).digest('hex')
+    });
 
     const qrImageUrl = `${process.env.PUBLIC_BASE_URL || ''}/public/dpp/${qrToken}/qr.png`;
     await rotateActiveQRCode(id, payloadUrl, qrImageUrl);
@@ -197,7 +228,7 @@ module.exports = (srv) => {
     const id = req.params[req.params.length - 1].ID;
     await requireOwningOrg(req, 'DPPs', id, DPP_OWNER_PATH);
     const dpp = await SELECT.one.from(DPPs).where({ ID: id });
-    if (!dpp) req.reject(404, `DPP '${id}' not found.`);
+    if (!dpp) req.reject(404, 'DPP not found.');
 
     await UPDATE(DPPs)
       .set({ status: 'archived', archived_at: new Date().toISOString() })
@@ -212,7 +243,7 @@ module.exports = (srv) => {
     const id = req.params[req.params.length - 1].ID;
     await requireOwningOrg(req, 'DPPs', id, DPP_OWNER_PATH);
     const dpp = await SELECT.one.from(DPPs).where({ ID: id });
-    if (!dpp) req.reject(404, `DPP '${id}' not found.`);
+    if (!dpp) req.reject(404, 'DPP not found.');
 
     const qrToken = tokens.generate();
     const payloadUrl = `${process.env.PUBLIC_BASE_URL || ''}/public/dpp/${qrToken}`;
@@ -233,8 +264,8 @@ module.exports = (srv) => {
     const id = req.params[req.params.length - 1].ID;
     await requireOwningOrg(req, 'DPPs', id, DPP_OWNER_PATH);
     const dpp = await SELECT.one.from(DPPs).where({ ID: id });
-    if (!dpp) req.reject(404, `DPP '${id}' not found.`);
-    if (!dpp.qr_token) req.reject(409, `DPP '${id}' has no QR token. Publish it first.`);
+    if (!dpp) req.reject(404, 'DPP not found.');
+    if (!dpp.qr_token) req.reject(409, 'This DPP has no QR code yet. Please publish it first.');
 
     // Always anchor the scan target to the current PUBLIC_BASE_URL + token. The
     // stored qr_payload_url is denormalized and can be host-less (seed data ships
@@ -255,7 +286,7 @@ module.exports = (srv) => {
     const id = req.params[req.params.length - 1].ID;
     await requireOwningOrg(req, 'DPPs', id, DPP_OWNER_PATH);
     const dpp = await SELECT.one.from(DPPs).where({ ID: id });
-    if (!dpp) req.reject(404, `DPP '${id}' not found.`);
+    if (!dpp) req.reject(404, 'DPP not found.');
 
     const result = await aggregate(id);
     const bd = result.breakdown || { own_co2_kg: null, components: [] };

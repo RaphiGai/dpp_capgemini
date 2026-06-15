@@ -77,6 +77,15 @@ type ESPRComplianceStatus : String(16) enum {
   non_compliant;
 }
 
+type DocumentType : String(32) enum {
+  certificate;                // Zertifikat
+  test_report;                // Prüfbericht
+  declaration_of_conformity;  // Konformitätserklärung
+  safety_data_sheet;          // Sicherheitsdatenblatt
+  manual;                     // Anleitung / Handbuch
+  other;                      // Sonstiges
+}
+
 type MarketingLinkType : String(20) enum {
   advertisement;
   product_info;

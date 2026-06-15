@@ -28,8 +28,8 @@ module.exports = (srv) => {
   // ----- Defaults + tenant guard on CREATE -----
 
   srv.before('CREATE', ProductItems, async (req) => {
-    if (!req.data.batch_ID) req.reject(400, 'A ProductItem must reference a batch.');
-    if (!req.data.serial_number) req.reject(400, 'A ProductItem must have a serial_number.');
+    if (!req.data.batch_ID) req.reject(400, 'An item must be assigned to a batch.');
+    if (!req.data.serial_number) req.reject(400, 'An item must have a serial number.');
     await requireOwningOrg(req, 'Batches', req.data.batch_ID, BATCH_OWNER_PATH);
     if (!req.data.status) req.data.status = 'active';
     // Unique Product Identifier (ESPR). A caller may pass a standardised UPI
@@ -42,7 +42,8 @@ module.exports = (srv) => {
   srv.after('CREATE', ProductItems, async (item, req) => {
     const chain = await resolveChain(item.batch_ID);
     if (!chain) {
-      req.reject(400, `Cannot resolve product chain for batch '${item.batch_ID}'.`);
+      console.warn(`[product-item] cannot resolve product chain for batch '${item.batch_ID}'`);
+      req.reject(400, 'This item cannot be linked to its product. Please check the batch assignment.');
     }
 
     const { DPPs } = cds.entities('dpp');

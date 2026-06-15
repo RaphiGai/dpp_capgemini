@@ -150,6 +150,7 @@ function toConsumerDTO(dpp, ctx) {
     materials: ctx.materialsTree,
     aggregated: ctx.aggregated,
     marketing: ctx.marketing || [],
+    documents: ctx.documents || [],
     // Identification & traceability shown on the consumer view (US6.11).
     identification: {
       dpp_id: dpp.ID,
@@ -185,6 +186,37 @@ async function loadMarketingLinks(owningOrgId, dppId) {
       valid_from: l.valid_from,
       valid_to: l.valid_to,
     }));
+}
+
+/**
+ * Public certificates & proofs for the consumer view: only `public` documents
+ * attached to this DPP's product, plus those on its batch (if any). Returns
+ * metadata + a token-protected download URL — never the binary itself.
+ */
+async function loadPublicDocuments(dpp) {
+  const { Documents } = cds.entities('dpp');
+  const cols = ['ID', 'doc_type', 'title', 'issuer', 'issue_date', 'valid_until', 'file_name', 'mime_type', 'file_size'];
+  // Two AND-only queries (product, then batch) avoid mixed AND/OR where ambiguity.
+  let rows = await SELECT.from(Documents).columns(cols)
+    .where({ visibility: 'public', product_ID: dpp.product_ID });
+  if (dpp.batch_ID) {
+    const batchRows = await SELECT.from(Documents).columns(cols)
+      .where({ visibility: 'public', batch_ID: dpp.batch_ID });
+    rows = rows.concat(batchRows);
+  }
+  const base = process.env.PUBLIC_BASE_URL || '';
+  return rows.map((d) => ({
+    id: d.ID,
+    doc_type: d.doc_type,
+    title: d.title,
+    issuer: d.issuer,
+    issue_date: d.issue_date,
+    valid_until: d.valid_until,
+    file_name: d.file_name,
+    mime_type: d.mime_type,
+    file_size: d.file_size,
+    download_url: `${base}/public/dpp/${dpp.qr_token}/documents/${d.ID}`,
+  }));
 }
 
 async function loadDPPContext(dpp) {
@@ -243,8 +275,9 @@ async function loadDPPContext(dpp) {
 
   const aggregated = await aggregate(dpp.ID);
   const marketing = await loadMarketingLinks(owningOrgId, dpp.ID);
+  const documents = await loadPublicDocuments(dpp);
 
-  return { product, variant, batch, item, materialsTree, aggregated, marketing };
+  return { product, variant, batch, item, materialsTree, aggregated, marketing, documents };
 }
 
 async function loadDPPByToken(token) {
@@ -272,6 +305,60 @@ async function resolveDPPByToken(req, res) {
   }
 }
 
+/**
+ * Token-protected download of a PUBLIC document for the consumer DPP. Consumers
+ * have no login, so this streams the media outside the OData auth gate. Three hard
+ * checks: valid token → published+public DPP; document is `public`; and the document
+ * belongs to the same product/batch the token resolves to (no cross-DPP leak).
+ */
+async function downloadPublicDocument(req, res) {
+  try {
+    const { token, docId } = req.params;
+    if (!tokens.verify(token)) return res.status(404).end();
+    const { DPPs, Documents } = cds.entities('dpp');
+
+    const dpp = await SELECT.one.from(DPPs)
+      .columns('ID', 'product_ID', 'batch_ID', 'status', 'visibility', 'qr_token')
+      .where({ qr_token: token });
+    if (!dpp || dpp.status !== 'published' || dpp.visibility !== 'public') return res.status(404).end();
+
+    const doc = await SELECT.one.from(Documents)
+      .columns('ID', 'product_ID', 'batch_ID', 'visibility', 'file_name', 'mime_type')
+      .where({ ID: docId });
+    if (!doc || doc.visibility !== 'public') return res.status(404).end();
+
+    // The document must belong to the same product/batch the token resolves to.
+    const okProduct = doc.product_ID && doc.product_ID === dpp.product_ID;
+    const okBatch = doc.batch_ID && dpp.batch_ID && doc.batch_ID === dpp.batch_ID;
+    if (!okProduct && !okBatch) return res.status(404).end();
+
+    // @cap-js returns an explicitly-selected media column as a Readable stream.
+    const row = await SELECT.one.from(Documents).columns('content').where({ ID: doc.ID });
+    const content = row && row.content;
+    if (content == null) return res.status(404).end();
+
+    res.set('Content-Type', doc.mime_type || 'application/octet-stream');
+    // Force a download (the consumer expects to save the certificate, not view it inline).
+    res.set('Content-Disposition', `attachment; filename="${String(doc.file_name || 'document').replace(/"/g, '')}"`);
+    res.set('Cache-Control', 'public, max-age=300');
+
+    if (typeof content.pipe === 'function') {
+      content.on('error', (err) => {
+        console.error('public document stream error', err);
+        if (!res.headersSent) res.status(500).end();
+      });
+      content.pipe(res);
+    } else if (Buffer.isBuffer(content)) {
+      res.end(content);
+    } else {
+      res.end(Buffer.from(String(content), 'base64')); // defensive: non-stream driver
+    }
+  } catch (err) {
+    console.error('public document download error', err);
+    if (!res.headersSent) res.status(500).end();
+  }
+}
+
 async function getQRImage(req, res) {
   try {
     if (!tokens.verify(req.params.token)) return res.status(404).end();
@@ -286,4 +373,4 @@ async function getQRImage(req, res) {
   }
 }
 
-module.exports = { resolveDPPByToken, getQRImage, loadDPPByToken };
+module.exports = { resolveDPPByToken, getQRImage, loadDPPByToken, downloadPublicDocument };

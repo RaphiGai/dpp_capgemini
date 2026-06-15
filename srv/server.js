@@ -128,6 +128,8 @@ cds.on('bootstrap', (app) => {
   // Public consumer endpoints. No authentication; visibility-filtered DTO.
   app.get('/public/dpp/:token', publicHandler.resolveDPPByToken);
   app.get('/public/dpp/:token/qr.png', publicHandler.getQRImage);
+  // Streams a single PUBLIC certificate/proof for the consumer DPP (token-gated).
+  app.get('/public/dpp/:token/documents/:docId', publicHandler.downloadPublicDocument);
 
   if (swaggerUi) {
     if (process.env.NODE_ENV !== 'production') {
@@ -139,6 +141,18 @@ cds.on('bootstrap', (app) => {
   } else if (process.env.NODE_ENV !== 'test') {
     console.warn('cds-swagger-ui-express not installed — /swagger is disabled');
   }
+
+  // Generic backstop for unhandled errors thrown by the Express-mounted routes above
+  // (healthz, auth, public/*) so a stack trace never leaks to the client. The OData
+  // service has its own srv.on('error') net; this only catches the bootstrap routes,
+  // since it is registered before CAP mounts its OData routes + error middleware.
+  app.use((err, req, res, next) => {
+    if (res.headersSent) return next(err);
+    console.error('[express] unhandled error:', err && err.message, err && err.stack);
+    res
+      .status((err && err.status) || 500)
+      .json({ error: { message: 'Something went wrong. Please try again later.' } });
+  });
 });
 
 module.exports = cds.server;

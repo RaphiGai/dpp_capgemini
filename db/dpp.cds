@@ -8,7 +8,7 @@ using {
   dpp.URL
 } from './common';
 using { dpp.Products, dpp.ProductVariants, dpp.Batches, dpp.ProductItems } from './product';
-using { dpp.audited, dpp.Organizations } from './org';
+using { dpp.audited, dpp.Organizations, dpp.Users } from './org';
 
 namespace dpp;
 
@@ -70,4 +70,19 @@ entity DPPMarketingLinks : identified, audited {
   is_active           : Boolean default true;
   valid_from          : Date;
   valid_to            : Date;
+}
+
+// ----- DPP version history (US5.9) -----
+// One immutable record per publish: the frozen, fully-resolved snapshot of the
+// passport at that moment, with the change reason and a content hash for tamper
+// evidence. Persisted by srv/handlers/dpp-handlers.js#publishDPP; exposed READ-ONLY
+// (writes are rejected). Tenant anchor: dpp.product.owning_organization_ID.
+entity DPPVersions : identified {
+  dpp            : Association to DPPs not null;
+  version_number : Integer not null;
+  snapshot_date  : Timestamp;
+  change_reason  : String(500);
+  changed_by     : Association to Users;
+  snapshot_data  : LargeString;   // fully-resolved state (buildSnapshot JSON)
+  content_hash   : String(64);    // sha256(snapshot_data)
 }

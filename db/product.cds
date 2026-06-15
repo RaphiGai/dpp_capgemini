@@ -9,7 +9,9 @@ using {
   dpp.BatchStatus,
   dpp.ProductItemStatus,
   dpp.BOMStatus,
-  dpp.ESPRComplianceStatus
+  dpp.ESPRComplianceStatus,
+  dpp.Visibility,
+  dpp.DocumentType
 } from './common';
 using { dpp.Organizations, dpp.BusinessPartners, dpp.audited } from './org';
 using { dpp.DPPs } from './dpp';
@@ -154,3 +156,34 @@ entity BatchComponents : identified {
   // Legacy / explicit: a specific component DPP (used when no component_batch is set).
   sub_dpp               : Association to DPPs;
 }
+
+// ----- Product / batch documentation (certificates & proofs) -----
+// Uploaded certificates and proofs ("Zertifikate und Nachweise"), typically PDFs.
+// Anchored at EITHER product OR batch level — exactly one association is set
+// (XOR enforced in srv/handlers/document-handlers.js). Files are stored as native
+// OData media streams (LargeBinary + @Core.MediaType), NOT base64. Each document
+// carries its own visibility flag: `public` documents are downloadable from the
+// consumer DPP via the token-protected route; `internal` ones stay in DPP Studio.
+entity Documents : identified, audited {
+  product     : Association to Products;
+  batch       : Association to Batches;
+
+  doc_type    : DocumentType not null default 'certificate';
+  title       : String(200)  not null;
+  visibility  : Visibility    default 'internal';
+  issuer      : String(200);
+  issue_date  : Date;
+  valid_until : Date;
+
+  // Native media stream — the binary lives in `content`; CAP serves it via
+  // GET Documents(ID)/content and accepts uploads via PUT to the same path.
+  content     : LargeBinary @Core.MediaType: mime_type @Core.ContentDisposition.Filename: file_name;
+  mime_type   : String(128) @Core.IsMediaType;
+  file_name   : String(255);
+  file_size   : Integer64;                    // bytes, set by the client on create
+}
+
+annotate Documents with @assert.unique : {
+  doc_per_product : [product, title],
+  doc_per_batch   : [batch, title]
+};

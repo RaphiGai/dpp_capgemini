@@ -72,6 +72,11 @@ service DPPService @(
   entity ProductBOMs           as projection on db.ProductBOMs;
   entity BatchComponents       as projection on db.BatchComponents;
 
+  // Certificates & proofs at product/batch level. The @Core.Media* annotations
+  // propagate from the DB entity, so OData exposes Documents(ID)/content for
+  // streaming download (GET) and upload (PUT). See srv/handlers/document-handlers.js.
+  entity Documents             as projection on db.Documents;
+
   entity DPPs as projection on db.DPPs actions {
     @Common.SideEffects: { TargetProperties: ['status', 'approved_at'] }
     action   approveDPP()                            returns DPPs;
@@ -93,6 +98,10 @@ service DPPService @(
 
   entity QRCodes               as projection on db.QRCodes;
   entity DPPMarketingLinks     as projection on db.DPPMarketingLinks;
+
+  // Immutable audit trail of published versions (US5.9). Read-only: writes are
+  // rejected in srv/handlers/dpp-handlers.js; rows are inserted server-side on publish.
+  entity DPPVersions           as projection on db.DPPVersions;
 
   function me() returns MeInfo;
 

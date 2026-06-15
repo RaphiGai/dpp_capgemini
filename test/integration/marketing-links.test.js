@@ -1,7 +1,7 @@
 'use strict';
 
 const cds = require('@sap/cds');
-const { GET, POST, expect } = cds.test().in(__dirname + '/../..');
+const { GET, POST, DELETE, expect } = cds.test().in(__dirname + '/../..');
 
 const alice = { auth: { username: 'alice.advanced', password: 'x' } }; // usr-alice, ORG-A (org-greenline)
 const dan   = { auth: { username: 'dan.advanced.b', password: 'x' } }; // ORG-B (org-fashionista)
@@ -95,5 +95,8 @@ describe('DPP marketing links', () => {
       ),
       403
     );
+
+    // ...nor delete an ORG-A link (the READ filter does not cover DELETE).
+    await expectStatus(DELETE("/odata/v4/dpp/DPPMarketingLinks('ml-summer-2026')", dan), 403);
   });
 });

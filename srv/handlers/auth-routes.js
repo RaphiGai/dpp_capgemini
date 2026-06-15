@@ -69,7 +69,7 @@ function esc(s) {
 
 function page(title, bodyInner) {
   return `<!doctype html>
-<html lang="de"><head><meta charset="utf-8">
+<html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title)}</title>
 <style>
@@ -87,30 +87,30 @@ function page(title, bodyInner) {
 }
 
 function renderLogin({ error } = {}) {
-  return page('Anmeldung — DPP', `
-    <h1>Anmeldung</h1>
+  return page('Sign in — DPP', `
+    <h1>Sign in</h1>
     ${error ? `<div class="err">${esc(error)}</div>` : ''}
     <form method="post" action="/auth/login">
-      <label for="username">Benutzername</label>
+      <label for="username">Username</label>
       <input id="username" name="username" autocomplete="username" autofocus required>
-      <label for="password">Passwort</label>
+      <label for="password">Password</label>
       <input id="password" name="password" type="password" autocomplete="current-password" required>
-      <button type="submit">Anmelden</button>
+      <button type="submit">Sign in</button>
     </form>`);
 }
 
 function renderReset({ error } = {}) {
-  return page('Passwort ändern — DPP', `
-    <h1>Passwort ändern</h1>
-    <div class="hint">Bitte vergeben Sie ein neues Passwort, um die Anmeldung abzuschließen.</div>
+  return page('Change password — DPP', `
+    <h1>Change password</h1>
+    <div class="hint">Please set a new password to complete sign-in.</div>
     ${error ? `<div class="err">${esc(error)}</div>` : ''}
     <form method="post" action="/auth/change-password">
-      <label for="currentPassword">Aktuelles (temporäres) Passwort</label>
+      <label for="currentPassword">Current (temporary) password</label>
       <input id="currentPassword" name="currentPassword" type="password" autocomplete="current-password" required>
-      <label for="newPassword">Neues Passwort</label>
+      <label for="newPassword">New password</label>
       <input id="newPassword" name="newPassword" type="password" autocomplete="new-password" required>
-      <button type="submit">Passwort setzen</button>
-      <div class="hint">Mindestens 10 Zeichen, mit Buchstabe und Ziffer.</div>
+      <button type="submit">Set password</button>
+      <div class="hint">At least 10 characters, including a letter and a digit.</div>
     </form>`);
 }
 
@@ -135,13 +135,13 @@ function register(app) {
       result = await credentials.verifyLogin(String(username || ''), String(password || ''));
     } catch (e) {
       console.error('[auth] login error:', e.message);
-      if (wantsJson(req)) return res.status(500).json({ ok: false, error: 'Anmeldung derzeit nicht möglich.' });
-      return res.status(500).type('html').send(renderLogin({ error: 'Anmeldung derzeit nicht möglich.' }));
+      if (wantsJson(req)) return res.status(500).json({ ok: false, error: 'Sign-in is currently unavailable. Please try again later.' });
+      return res.status(500).type('html').send(renderLogin({ error: 'Sign-in is currently unavailable. Please try again later.' }));
     }
     if (!result.ok) {
       const msg = result.locked
-        ? 'Konto vorübergehend gesperrt. Bitte später erneut versuchen.'
-        : 'Benutzername oder Passwort ungültig.';
+        ? 'Your account is temporarily locked. Please try again later.'
+        : 'Invalid username or password.';
       if (wantsJson(req)) return res.status(401).json({ ok: false, error: msg });
       return res.status(401).type('html').send(renderLogin({ error: msg }));
     }
@@ -162,8 +162,8 @@ function register(app) {
     const token = readCookie(req, COOKIE_NAME);
     const payload = token ? session.verify(token) : null;
     if (!payload || !payload.uid) {
-      if (wantsJson(req)) return res.status(401).json({ ok: false, error: 'Sitzung abgelaufen. Bitte erneut anmelden.' });
-      return res.status(401).type('html').send(renderLogin({ error: 'Sitzung abgelaufen. Bitte erneut anmelden.' }));
+      if (wantsJson(req)) return res.status(401).json({ ok: false, error: 'Your session has expired. Please sign in again.' });
+      return res.status(401).type('html').send(renderLogin({ error: 'Your session has expired. Please sign in again.' }));
     }
 
     const { currentPassword, newPassword } = req.body || {};

@@ -35,19 +35,19 @@ module.exports = (srv) => {
     const displayName = (req.data.displayName || '').trim();
     const role = req.data.role;
 
-    if (!username || !email) req.reject(400, 'username and email are required.');
+    if (!username || !email) req.reject(400, 'Username and email are required.');
     if (!APP_ROLES.includes(role)) {
-      req.reject(400, `role must be one of: ${APP_ROLES.join(', ')}.`);
+      req.reject(400, 'Invalid role. Please choose a valid user role.');
     }
 
     // Uniqueness: username is global; email is unique within the caller's org.
     if (await credentials.findByUsername(username)) {
-      req.reject(409, `Username '${username}' is already taken.`);
+      req.reject(409, 'This username is already taken.');
     }
     const emailClash = await SELECT.one.from(Users)
       .where({ email, organization_ID: callerOrgId });
     if (emailClash) {
-      req.reject(409, `A user with email '${email}' already exists in your organization.`);
+      req.reject(409, 'A user with this email address already exists in your organization.');
     }
 
     const temp = passwords.generateTempPassword();
@@ -77,7 +77,7 @@ module.exports = (srv) => {
     requireRole(req, 'company_advanced');
 
     const target = await credentials.findById(req.data.userId);
-    if (!target) req.reject(404, `User '${req.data.userId}' not found.`);
+    if (!target) req.reject(404, 'User not found.');
     if (target.organization_ID !== callerOrgId) {
       req.reject(403, 'Users can only be managed within your own organization.');
     }
@@ -90,7 +90,7 @@ module.exports = (srv) => {
   srv.on('changePassword', async (req) => {
     await requireActiveUser(req);
     const uid = req.user._appUserId;
-    if (!uid) req.reject(403, 'No active user record.');
+    if (!uid) req.reject(403, 'Your account is not active. Please contact your administrator.');
     try {
       await credentials.changePassword(uid, req.data.currentPassword, req.data.newPassword);
     } catch (e) {
@@ -105,7 +105,7 @@ module.exports = (srv) => {
     requireRole(req, 'company_advanced');
 
     const target = await credentials.findById(req.data.userId);
-    if (!target) req.reject(404, `User '${req.data.userId}' not found.`);
+    if (!target) req.reject(404, 'User not found.');
     if (target.organization_ID !== callerOrgId) {
       req.reject(403, 'Users can only be managed within your own organization.');
     }
@@ -133,7 +133,7 @@ module.exports = (srv) => {
     requireRole(req, 'company_advanced');
 
     const target = await credentials.findById(req.data.userId);
-    if (!target) req.reject(404, `User '${req.data.userId}' not found.`);
+    if (!target) req.reject(404, 'User not found.');
     if (target.organization_ID !== callerOrgId) {
       req.reject(403, 'Users can only be managed within your own organization.');
     }

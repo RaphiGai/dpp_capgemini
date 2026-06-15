@@ -115,7 +115,7 @@ module.exports = (srv) => {
         .columns(['ID', 'product_ID'])
         .where({ ID: parent_ID });
       if (!parentVariant) {
-        req.reject(400, `Parent variant '${parent_ID}' does not exist.`);
+        req.reject(400, 'The selected parent variant does not exist.');
       }
       await requireOwningOrg(req, 'Products', parentVariant.product_ID);
     }
