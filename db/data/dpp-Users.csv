@@ -1,0 +1,5 @@
+ID;email;display_name;organization_ID;role
+usr-001;a.huber@greenline.example;Anna Huber;org-001;admin
+usr-002;m.silva@greenline.example;Miguel Silva;org-001;dpp_editor
+usr-003;p.castro@portoconf.example;Paula Castro;org-002;dpp_editor
+usr-004;b.audit@baua.example;Bernd Audit;org-005;authority

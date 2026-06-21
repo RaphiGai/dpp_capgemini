@@ -1,0 +1,6 @@
+ID;dpp_ID;material_class;fiber_name;percentage;country_of_origin;recycled_content_pct;verification_status
+dpp-001-mat-1;dpp-001;natural_plant;Organic Cotton;80.00;EG;0.00;documented
+dpp-001-mat-2;dpp-001;recycled;Recycled Polyester;20.00;TR;100.00;documented
+dpp-002-mat-1;dpp-002;recycled;Recycled Polyester;70.00;TR;100.00;documented
+dpp-002-mat-2;dpp-002;natural_plant;Cotton;30.00;IN;0.00;declared
+dpp-003-mat-1;dpp-003;natural_plant;Cotton;100.00;EG;0.00;declared

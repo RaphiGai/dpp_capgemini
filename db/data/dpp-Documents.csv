@@ -1,0 +1,5 @@
+ID;dpp_ID;document_type;title;file_name;issuer;issued_at;visibility
+dpp-001-doc-1;dpp-001;certificate;OEKO-TEX 100 Zertifikat;oekotex_2025.pdf;OEKO-TEX Service GmbH;2025-08-01;public
+dpp-001-doc-2;dpp-001;declaration;EU-Konformitaetserklaerung;eu_decl_2026.pdf;Greenline Apparel GmbH;2026-04-15;public
+dpp-001-doc-3;dpp-001;audit_report;SMETA-Audit Werk Porto;smeta_porto_2025.pdf;Sedex;2025-09-12;restricted
+dpp-002-doc-1;dpp-002;declaration;REACH-Konformitaetserklaerung;reach_2026.pdf;Greenline Apparel GmbH;2026-03-01;public

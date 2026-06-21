@@ -1,0 +1,4 @@
+ID;product_ID;issuing_organization_ID;facility_ID;gtin;granularity_level;batch_lot_number;serial_number;status;visibility;verification_status;manufacturing_country_iso2;manufacturing_date_from;manufacturing_date_to;placed_on_market_date;published_at;qr_payload_url
+dpp-001;prd-001;org-001;fac-002;04012345678901;batch;B2026-A0142;;published;public;documented;PT;2026-02-01;2026-02-28;2026-04-15;2026-04-15T09:00:00Z;https://dpp.greenline.example/p/dpp-001
+dpp-002;prd-002;org-001;fac-003;04012345678918;batch;B2026-H0023;;published;public;declared;TR;2026-01-10;2026-02-05;2026-03-01;2026-03-01T08:00:00Z;https://dpp.greenline.example/p/dpp-002
+dpp-003;prd-003;org-001;fac-002;04012345678925;model;;;draft;internal;declared;PT;;;;;

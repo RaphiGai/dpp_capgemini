@@ -1,0 +1,6 @@
+ID;name;gtin;category;owning_organization_ID
+prd-001;Crew T-Shirt Organic;04012345678901;tops;org-001
+prd-002;Hoodie Recycled Blend;04012345678918;outerwear;org-001
+prd-003;Five-Pocket Jeans;04012345678925;bottoms;org-001
+prd-004;Merino Crew Socks;04012345678932;accessories;org-001
+prd-005;Cable-Knit Pullover;04012345678949;tops;org-001

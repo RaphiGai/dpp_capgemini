@@ -1,0 +1,5 @@
+ID;organization_ID;name;facility_type;country_iso2;region;gln;latitude;longitude;audit_status;last_audit_date
+fac-001;org-001;Greenline HQ Lager;warehouse;DE;Bayern;4012345001003;48.137000;11.575000;;
+fac-002;org-002;Werk Porto;garment_factory;PT;Porto;5601234501000;41.149000;-8.610000;SMETA;2025-09-12
+fac-003;org-003;Knit Plant Istanbul;knitting_mill;TR;Istanbul;8690011002005;41.008000;28.978000;BSCI;2025-11-04
+fac-004;org-004;Cotton Farm Nile-Delta;farm;EG;Damietta;;31.420000;31.815000;;
