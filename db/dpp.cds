@@ -25,7 +25,7 @@ entity DPPs : identified, audited {
   status              : DPPStatus   default 'draft';
   visibility          : Visibility  default 'internal';
   current_version     : Integer     default 1;
-  qr_token            : String(128);
+  qr_token            : String(256);   // structured, signed token (see srv/lib/token.js)
   qr_payload_url      : URL;
   public_url          : URL;
   approved_at         : Timestamp;

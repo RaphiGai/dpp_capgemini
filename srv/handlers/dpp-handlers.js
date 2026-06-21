@@ -115,6 +115,30 @@ async function rotateActiveQRCode(dppId, qrValue, qrImageUrl) {
   });
 }
 
+/**
+ * Load the readable business codes for a DPP (product GTIN, variant SKU, batch number,
+ * item serial/UPI, creation date) used to build a structured QR token (see srv/lib/token.js).
+ */
+async function tokenContextFor(dpp) {
+  const { Products, ProductVariants, Batches, ProductItems } = cds.entities('dpp');
+  const [product, batch, item] = await Promise.all([
+    dpp.product_ID ? SELECT.one.from(Products).columns('gtin').where({ ID: dpp.product_ID }) : null,
+    dpp.batch_ID ? SELECT.one.from(Batches).columns('batch_number', 'variant_ID').where({ ID: dpp.batch_ID }) : null,
+    dpp.item_ID ? SELECT.one.from(ProductItems).columns('serial_number', 'upi').where({ ID: dpp.item_ID }) : null
+  ]);
+  const variantId = dpp.variant_ID || (batch && batch.variant_ID);
+  const variant = variantId
+    ? await SELECT.one.from(ProductVariants).columns('sku').where({ ID: variantId })
+    : null;
+  return {
+    gtin: product && product.gtin,
+    sku: variant && variant.sku,
+    batch_number: batch && batch.batch_number,
+    serial: item ? item.serial_number || item.upi : null,
+    date: dpp.createdAt || new Date().toISOString()
+  };
+}
+
 module.exports = (srv) => {
   const { DPPs } = srv.entities;
 
@@ -179,7 +203,7 @@ module.exports = (srv) => {
     const now = new Date().toISOString();
     const previouslyPublished = dpp.status === 'published';
     const nextVersion = previouslyPublished ? dpp.current_version + 1 : dpp.current_version;
-    const qrToken = dpp.qr_token || tokens.generate();
+    const qrToken = dpp.qr_token || tokens.generate(await tokenContextFor(dpp));
     const payloadUrl = `${process.env.PUBLIC_BASE_URL || ''}/public/dpp/${qrToken}`;
     // Shareable direct link (US6.10): token-based, identical to the QR target so a
     // browser opening it gets the consumer SPA shell (see router/approuter.js).
@@ -245,7 +269,7 @@ module.exports = (srv) => {
     const dpp = await SELECT.one.from(DPPs).where({ ID: id });
     if (!dpp) req.reject(404, 'DPP not found.');
 
-    const qrToken = tokens.generate();
+    const qrToken = tokens.generate(await tokenContextFor(dpp));
     const payloadUrl = `${process.env.PUBLIC_BASE_URL || ''}/public/dpp/${qrToken}`;
     const qrImageUrl = `${process.env.PUBLIC_BASE_URL || ''}/public/dpp/${qrToken}/qr.png`;
     // Keep the shareable direct link in sync with the rotated token (US6.10/US6.14).
