@@ -47,6 +47,10 @@ entity Products : identified, audited {
   reuse_video_url        : URL;
   status                : ProductStatus        default 'draft';
   storytelling          : LargeString;                         // JSON array [{title, body}] — consumer story (per product)
+  // Per-field consumer visibility overrides as a JSON map {fieldName: 'public'|'internal'}.
+  // null/absent ⇒ the field catalogue default applies. Enforced in srv/handlers/public-handler.js
+  // via srv/lib/field-visibility.js; regulatory-locked fields are never hidden.
+  field_visibility      : LargeString;
 
   variants : Association to many ProductVariants on variants.product = $self;
 }
@@ -64,6 +68,7 @@ entity ProductVariants : identified, audited {
   image_url : URL;                            // colour-correct product image (external URL)
   image_data : LargeString;                   // uploaded product image as a base64 data URL (preferred over image_url)
   status   : VariantStatus default 'active';
+  field_visibility : LargeString;             // per-field consumer visibility map (see Products.field_visibility)
 
   batches : Association to many Batches    on batches.variant = $self;
   bom     : Composition of many ProductBOMs on bom.parent     = $self;
@@ -86,6 +91,7 @@ entity Batches : identified, audited {
   co2_footprint_kg     : Decimal(10, 3);
   recycled_content_pct : Decimal(5, 2);
   status               : BatchStatus default 'draft';
+  field_visibility     : LargeString;          // per-field consumer visibility map (see Products.field_visibility)
 
   items : Association to many ProductItems on items.batch = $self;
 }
@@ -134,6 +140,10 @@ entity ProductBOMs : identified, audited {
   ext_co2_footprint        : Decimal(10, 4);
   ext_recycled_content_pct : Decimal(5, 2);
   status           : BOMStatus default 'active';
+  // Consumer visibility of this component in the public materials tree.
+  // 'internal' ⇒ the component (and its sub-DPP link) is omitted from the consumer view;
+  // it still counts in the CO2/recycled aggregation (display-only flag).
+  visibility       : Visibility default 'public';
 }
 
 annotate ProductBOMs with @assert.unique : { edge : [parent, component] };

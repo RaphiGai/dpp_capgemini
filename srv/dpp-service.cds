@@ -88,6 +88,12 @@ service DPPService @(
     @Common.SideEffects: { TargetProperties: ['status', 'archived_at'] }
     action   archiveDPP()                            returns DPPs;
 
+    @Common.SideEffects: { TargetProperties: ['status', 'archived_at'] }
+    action   unarchiveDPP()                          returns DPPs;
+
+    @Common.SideEffects: { TargetProperties: ['current_version', 'last_updated'] }
+    action   createDPPVersion(change_reason : String(500)) returns DPPs;
+
     @Common.SideEffects: { TargetProperties: ['qr_token', 'qr_payload_url'] }
     action   regenerateQRToken()                     returns DPPs;
 
@@ -118,4 +124,27 @@ service DPPService @(
   action updateProfile(displayName : String(120), email : db.EmailAddr, appearanceTheme : String(20)) returns Boolean;
   action deactivateUser(userId : String) returns Boolean;
   action reactivateUser(userId : String) returns Boolean;
+
+  // ----- Sustainability analytics (US9.6) — see srv/handlers/analytics-handlers.js -----
+  // Org-wide, tenant-scoped KPI/breakdown payload as a JSON string. company_advanced-only
+  // (enforced in the handler). Modelled as a read-only action (vs a function) only so the
+  // optional date/criteria parameters travel in a JSON body; it performs no writes and is
+  // intentionally NOT in auth-helpers.WRITE_EVENTS.
+  action sustainabilityAnalytics(
+    dateFrom    : Date,
+    dateTo      : Date,
+    productType : String(20),
+    esprStatus  : String(20)
+  ) returns LargeString;
+
+  // ----- Compliance analytics (US9.x) — see srv/handlers/compliance-handlers.js -----
+  // ESPR readiness + documentation-evidence completeness + the declared-not-evidenced
+  // integrity cross-check, as a JSON string. company_advanced-only, read-only (same
+  // contract as sustainabilityAnalytics: NOT in auth-helpers.WRITE_EVENTS).
+  action complianceAnalytics(
+    dateFrom    : Date,
+    dateTo      : Date,
+    productType : String(20),
+    esprStatus  : String(20)
+  ) returns LargeString;
 }

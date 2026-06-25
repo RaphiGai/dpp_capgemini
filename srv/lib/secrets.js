@@ -14,7 +14,12 @@
  */
 
 const SERVICE_NAME = process.env.SECRETS_SERVICE_NAME || 'dpp-secrets';
-const KNOWN_KEYS = ['QR_TOKEN_HMAC_SECRET', 'PUBLIC_BASE_URL', 'SESSION_SECRET'];
+const KNOWN_KEYS = [
+  'QR_TOKEN_HMAC_SECRET', 'PUBLIC_BASE_URL', 'SESSION_SECRET',
+  // Outbound email (self-service password reset) — projected from dpp-secrets on BTP.
+  'MAIL_HOST', 'MAIL_PORT', 'MAIL_SECURE', 'MAIL_USER', 'MAIL_PASSWORD', 'MAIL_FROM',
+  'PASSWORD_RESET_TTL_MIN',
+];
 
 function findUserProvided(vcap, name) {
   const entries = vcap['user-provided'];

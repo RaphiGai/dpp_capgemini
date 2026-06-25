@@ -1,6 +1,7 @@
 'use strict';
 
 const cds = require('@sap/cds');
+const { randomBytes, createHash } = require('crypto');
 const passwords = require('./passwords');
 
 /**
@@ -15,6 +16,12 @@ const passwords = require('./passwords');
 
 const LOCK_THRESHOLD = 10;       // failed attempts before lockout
 const LOCK_MINUTES = 15;
+// Self-service password-reset link lifetime (minutes); override via env.
+const RESET_TTL_MINUTES = parseInt(process.env.PASSWORD_RESET_TTL_MIN || '', 10) || 60;
+
+function sha256(value) {
+  return createHash('sha256').update(String(value)).digest('hex');
+}
 
 function fail(status, message) {
   return Object.assign(new Error(message), { status, expose: true });
@@ -149,6 +156,65 @@ async function setTemporaryPassword(userId) {
   return temp;
 }
 
+/**
+ * Self-service reset (step 1): resolve an ACTIVE user by username whose stored email
+ * matches the supplied email (case-insensitive). Returns the user row or null.
+ */
+async function findActiveByUsernameAndEmail(username, email) {
+  const user = await findByUsername(username);
+  if (!user || user.active === false) return null;
+  if (!email || !user.email) return null;
+  if (String(user.email).toLowerCase() !== String(email).trim().toLowerCase()) return null;
+  return user;
+}
+
+/**
+ * Self-service reset (step 2): mint a single-use, time-limited reset token for a user.
+ * Stores only the sha256 hash + expiry; returns the plaintext token ONCE (goes into the
+ * emailed link). Replaces any previous outstanding token for that user.
+ */
+async function createPasswordResetToken(userId) {
+  const { Users } = entities();
+  const token = randomBytes(32).toString('base64url');
+  const expires = new Date(Date.now() + RESET_TTL_MINUTES * 60 * 1000).toISOString();
+  await UPDATE(Users)
+    .set({ reset_token_hash: sha256(token), reset_token_expires: expires })
+    .where({ ID: userId });
+  return token;
+}
+
+/**
+ * Self-service reset (step 3): exchange a valid, unexpired token for a new password.
+ * Enforces the strength policy, sets the new hash, clears the token + must-reset flag +
+ * lockout (single-use). Throws fail(4xx) on invalid/expired token or weak password.
+ */
+async function consumePasswordResetToken(token, newPassword) {
+  const { Users } = entities();
+  if (!token) throw fail(400, 'This reset link is invalid or has expired. Please request a new one.');
+
+  const user = await SELECT.one.from(Users).where({ reset_token_hash: sha256(token) });
+  if (!user || !user.reset_token_expires || new Date(user.reset_token_expires).getTime() < Date.now()) {
+    throw fail(400, 'This reset link is invalid or has expired. Please request a new one.');
+  }
+
+  const strength = passwords.validateStrength(newPassword);
+  if (!strength.ok) throw fail(400, strength.reason);
+
+  const hash = await passwords.hash(newPassword);
+  await UPDATE(Users)
+    .set({
+      password_hash: hash,
+      reset_token_hash: null,
+      reset_token_expires: null,
+      must_reset_password: false,
+      password_updated_at: new Date().toISOString(),
+      failed_login_count: 0,
+      locked_until: null,
+    })
+    .where({ ID: user.ID });
+  return true;
+}
+
 module.exports = {
   findById,
   findByUsername,
@@ -156,6 +222,9 @@ module.exports = {
   verifyLogin,
   changePassword,
   setTemporaryPassword,
+  findActiveByUsernameAndEmail,
+  createPasswordResetToken,
+  consumePasswordResetToken,
   LOCK_THRESHOLD,
   LOCK_MINUTES,
 };

@@ -93,10 +93,12 @@ resources:
 
   # Pre-created user-provided service holding runtime secrets.
   # SESSION_SECRET signs the app-managed login session cookie (own auth) — 32+ char random.
-  # Create once per space before `cf deploy`:
-  #   cf cups dpp-secrets -p '{"QR_TOKEN_HMAC_SECRET":"<32+ char random>","SESSION_SECRET":"<32+ char random>","PUBLIC_BASE_URL":"https://<approuter-host>"}'
+  # MAIL_* drive the self-service password-reset email (e.g. Mailjet SMTP). MAIL_USER/
+  # MAIL_PASSWORD = the Mailjet API key / secret key; MAIL_FROM = a Mailjet-validated sender.
+  # Create once per space before `cf deploy` (single JSON object — uups replaces it whole):
+  #   cf cups dpp-secrets -p '{"QR_TOKEN_HMAC_SECRET":"<32+ char random>","SESSION_SECRET":"<32+ char random>","PUBLIC_BASE_URL":"https://<approuter-host>","MAIL_HOST":"in-v3.mailjet.com","MAIL_PORT":"587","MAIL_SECURE":"false","MAIL_USER":"<mailjet api key>","MAIL_PASSWORD":"<mailjet secret key>","MAIL_FROM":"<validated sender>"}'
   # Rotate without redeploying (rotating SESSION_SECRET invalidates all active sessions):
-  #   cf uups dpp-secrets -p '{...}' && cf restart dpp-srv
+  #   cf uups dpp-secrets -p '{...all keys...}' && cf restart dpp-srv
   - name: dpp-secrets
     type: org.cloudfoundry.existing-service
     parameters:

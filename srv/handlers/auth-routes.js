@@ -3,6 +3,7 @@
 const express = require('express');
 const session = require('../lib/session');
 const credentials = require('../lib/credentials');
+const email = require('../lib/email');
 
 /**
  * App-managed login endpoints (US1.1 / US1.2 / US1.3), mounted on the Express
@@ -185,6 +186,46 @@ function register(app) {
     clearSessionCookie(res);
     if (wantsJson(req)) return res.json({ ok: true });
     return res.redirect(302, '/login');
+  });
+
+  // ----- Self-service password reset (US: email reset link) -----
+  // Step 1: the user submits username + email. If both match an active account, we mint a
+  // single-use, time-limited token and email a reset link. The password is NOT changed yet.
+  // (Per product decision, a non-match returns a concrete error rather than a generic one.)
+  app.post('/auth/request-password-reset', parse, async (req, res) => {
+    const { username, email: emailAddr } = req.body || {};
+    let user;
+    try {
+      user = await credentials.findActiveByUsernameAndEmail(String(username || ''), String(emailAddr || ''));
+    } catch (e) {
+      console.error('[auth] reset request error:', e.message);
+      return res.status(500).json({ ok: false, error: 'Password reset is currently unavailable. Please try again later.' });
+    }
+    if (!user) {
+      return res.status(400).json({ ok: false, error: 'Username and email do not match an account.' });
+    }
+    try {
+      const token = await credentials.createPasswordResetToken(user.ID);
+      const base = process.env.PUBLIC_BASE_URL || '';
+      const link = `${base}/reset-password?token=${encodeURIComponent(token)}`;
+      await email.sendPasswordResetEmail(user.email, { link, displayName: user.display_name });
+    } catch (e) {
+      console.error('[auth] reset request error:', e.message);
+      return res.status(500).json({ ok: false, error: 'Password reset is currently unavailable. Please try again later.' });
+    }
+    return res.json({ ok: true });
+  });
+
+  // Step 2: the user opens the emailed link and sets a new password. The token is consumed
+  // (single-use); on success the user can sign in normally.
+  app.post('/auth/reset-password', parse, async (req, res) => {
+    const { token, newPassword } = req.body || {};
+    try {
+      await credentials.consumePasswordResetToken(String(token || ''), String(newPassword || ''));
+    } catch (e) {
+      return res.status(e.status || 400).json({ ok: false, error: e.message });
+    }
+    return res.json({ ok: true });
   });
 }
 

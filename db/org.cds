@@ -61,6 +61,10 @@ entity Users : identified {
   password_updated_at : Timestamp;
   failed_login_count  : Integer default 0;     // brute-force counter (login layer)
   locked_until        : Timestamp;             // lockout window (login layer)
+  // Self-service password reset: single-use, time-limited token (sha256 hash stored,
+  // never the plaintext). Set on request, cleared on consume. Not exposed via OData.
+  reset_token_hash    : String(64);
+  reset_token_expires : Timestamp;
 }
 
 annotate Users with @assert.unique : { email_per_org : [email, organization] };

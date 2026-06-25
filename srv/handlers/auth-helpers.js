@@ -6,7 +6,7 @@ const APP_ROLES = ['company_advanced', 'company_user'];
 
 const WRITE_EVENTS = new Set([
   'CREATE', 'UPDATE', 'DELETE', 'UPSERT',
-  'approveDPP', 'publishDPP', 'archiveDPP', 'regenerateQRToken',
+  'approveDPP', 'publishDPP', 'archiveDPP', 'unarchiveDPP', 'createDPPVersion', 'regenerateQRToken',
   'archiveProduct',
   'importProducts', 'importBatches', 'importBOM',
   // User management — company_advanced only. NOTE: 'changePassword' is
