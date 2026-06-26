@@ -3,6 +3,7 @@
 const express = require('express');
 const session = require('../lib/session');
 const credentials = require('../lib/credentials');
+const email = require('../lib/email');
 
 /**
  * App-managed login endpoints (US1.1 / US1.2 / US1.3), mounted on the Express

@@ -44,7 +44,10 @@ describe('Public consumer DTO with recursive BOM tree', () => {
 
     expect(data.product.name).toBe('Classic T-Shirt');
     expect(data.variant.color).toBe('Blue');
-    expect(data.batch.batch_number).toBe('2026-05-A');
+    // batch_number defaults to 'internal' (hidden from both the batch section and the
+    // identification block, which now follows the batch field setting); product_id is
+    // always exposed in identification.
+    expect(data.identification.product_id).toBe('prod-tshirt-classic');
     expect(Array.isArray(data.materials)).toBe(true);
 
     // Storytelling is a product-level property, parsed into an array for the consumer.

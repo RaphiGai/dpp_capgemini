@@ -39,22 +39,46 @@ describe('US6.6 — QR token authenticity', () => {
   });
 });
 
-describe('US6.12 — only published + public DPPs are accessible', () => {
+describe('US6.12 — published + public and archived + public DPPs are accessible', () => {
   test('a valid token on a draft/internal DPP returns 404', async () => {
     const token = await attachToken('dpp-item-tshirt-0002'); // seeded draft + internal
     expect((await getPublic(token)).status).toBe(404);
   });
 
-  test('an archived DPP is inaccessible even with a valid token', async () => {
+  test('an archived but public DPP stays consumer-visible (200)', async () => {
+    // Archiving freezes the passport but keeps it reachable: labels already in
+    // circulation must keep resolving. box-0001 is seeded published + public.
     const { DPPs } = cds.entities('dpp');
     const token = await attachToken('dpp-item-box-0001');
     await UPDATE(DPPs).set({ status: 'archived' }).where({ ID: 'dpp-item-box-0001' });
+    const { status, data } = await getPublic(token);
+    expect(status).toBe(200);
+    expect(data.identification.dpp_id).toBe('dpp-item-box-0001');
+  });
+
+  test('an archived + internal DPP is still gated by visibility (404)', async () => {
+    const { DPPs } = cds.entities('dpp');
+    const token = await attachToken('dpp-item-jacket-0001'); // seeded published + public
+    await UPDATE(DPPs)
+      .set({ status: 'archived', visibility: 'internal' })
+      .where({ ID: 'dpp-item-jacket-0001' });
     expect((await getPublic(token)).status).toBe(404);
+    // Restore so the later US6.14 test (which reuses jacket-0001) still passes.
+    await UPDATE(DPPs)
+      .set({ status: 'published', visibility: 'public' })
+      .where({ ID: 'dpp-item-jacket-0001' });
   });
 });
 
 describe('US6.11 — identification & traceability on the consumer DTO', () => {
   test('a published item DPP exposes product/batch/serial/UPI/DPP identifiers', async () => {
+    // The identification batch number follows the batch's field-visibility setting
+    // (default 'internal'); make it public so this traceability check sees it.
+    const { Batches } = cds.entities('dpp');
+    await UPDATE(Batches)
+      .set({ field_visibility: JSON.stringify({ batch_number: 'public' }) })
+      .where({ ID: 'batch-2026-05-A' });
+
     const token = await attachToken('dpp-item-tshirt-0001'); // published + public, serialized
     const { status, data } = await getPublic(token);
     expect(status).toBe(200);

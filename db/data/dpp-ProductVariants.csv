@@ -9,3 +9,7 @@ var-denim-default;prod-mat-denim;Indigo;OneSize;RD-340-DEF;;;active;
 var-lining-default;prod-mat-lining;Black;OneSize;RPL-90-DEF;;;active;
 var-button-default;prod-comp-button;Silver;OneSize;BTN-15-DEF;;3;active;
 var-box-default;prod-pkg-box;Brown;M;BOX-M-DEF;;40;active;
+var-hoodie-grey-m;prod-hoodie-eco;Grey;M;HOODIE-GREY-M;04012345670119;520;active;https://placehold.co/600x450/4b5563/ffffff?text=Eco+Hoodie+Grey
+var-fleece-default;prod-fabric-fleece;Natural;OneSize;RF-280-DEF;;1000;active;
+var-yarn-default;prod-yarn-reccotton;Natural;OneSize;RCY-50-DEF;;1000;active;
+var-fibre-default;prod-fibre-reccotton;Natural;OneSize;RCF-RAW-DEF;;;active;
