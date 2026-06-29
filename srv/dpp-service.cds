@@ -103,6 +103,24 @@ service DPPService @(
   // rejected in srv/handlers/dpp-handlers.js; rows are inserted server-side on publish.
   entity DPPVersions           as projection on db.DPPVersions;
 
+  // Result type for Excel/CSV bulk imports (US7.2–7.4).
+  // `errors` is a JSON array: [{row, field, message, severity: 'error'|'warning'}]
+  type ImportResult : {
+    total   : Integer;
+    created : Integer;
+    skipped : Integer;
+    errors  : LargeString;
+  };
+
+  // Unbound import actions — receive rows as a JSON-serialised array, validate
+  // and (if dryRun=false) commit to the DB.  dryRun=true is the validate pass
+  // used by the frontend wizard before the user confirms the import.
+  action importProducts        (rows : LargeString, dryRun : Boolean) returns ImportResult;
+  action importVariants        (rows : LargeString, dryRun : Boolean) returns ImportResult;
+  action importBatches         (rows : LargeString, dryRun : Boolean) returns ImportResult;
+  action importBOM             (rows : LargeString, dryRun : Boolean) returns ImportResult;
+  action importBusinessPartners(rows : LargeString, dryRun : Boolean) returns ImportResult;
+
   function me() returns MeInfo;
 
   // ----- User management (own auth) — see srv/handlers/user-handlers.js -----

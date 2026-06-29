@@ -8,7 +8,7 @@ const WRITE_EVENTS = new Set([
   'CREATE', 'UPDATE', 'DELETE', 'UPSERT',
   'approveDPP', 'publishDPP', 'archiveDPP', 'regenerateQRToken',
   'archiveProduct',
-  'importProducts', 'importBatches', 'importBOM',
+  'importProducts', 'importVariants', 'importBatches', 'importBOM', 'importBusinessPartners',
   // User management — company_advanced only. NOTE: 'changePassword' is
   // intentionally NOT listed: every active user (incl. read-only company_user)
   // must be able to change their own password (forced first-login flow).
