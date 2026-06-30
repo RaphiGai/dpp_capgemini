@@ -42,6 +42,8 @@ entity Products : identified, audited {
   model                 : String(120);
   description           : String(500);
   gtin                  : GTIN;
+  upc                   : String(20);                        // Universal Product Code — optional, internal by default
+  ein                   : String(20);                        // EIN product number — optional, internal by default
   fibre_composition     : String(500);
   care_instructions     : String(500);
   repair_instructions   : String(500);
@@ -58,6 +60,13 @@ entity Products : identified, audited {
   repair_video_url      : URL;
   disposal_video_url    : URL;
   reuse_video_url        : URL;
+  // Optional "recommended products" shop links per care category — advertise products
+  // (detergents, repair kits, second-life marketplaces, …) alongside the matching care
+  // block on the consumer DPP. Shown only when set.
+  care_products_url     : URL;
+  repair_products_url   : URL;
+  reuse_products_url    : URL;
+  disposal_products_url : URL;
   status                : ProductStatus        default 'draft';
   storytelling          : LargeString;                         // JSON array [{title, body}] — consumer story (per product)
   // Per-field consumer visibility overrides as a JSON map {fieldName: 'public'|'internal'}.

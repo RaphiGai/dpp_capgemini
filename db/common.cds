@@ -95,6 +95,14 @@ type MarketingLinkType : String(20) enum {
   other;
 }
 
+// How a marketing link is shown on the consumer DPP: as a clickable image tile or a
+// video tile (a play overlay on the thumbnail). null ⇒ treated as 'image' (CSV-seeded
+// rows bypass the CDS default).
+type MarketingMediaType : String(10) enum {
+  image;
+  video;
+}
+
 type UserRole : String(20) enum {
   company_advanced;
   company_user;

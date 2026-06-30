@@ -26,7 +26,7 @@ const getPublic = (token) => axios.get(`/public/dpp/${token}`, { validateStatus:
 // Keep tests order-independent — clear everything this suite writes.
 async function reset() {
   const { Products, ProductVariants, Batches, ProductBOMs } = cds.entities('dpp');
-  await UPDATE(Products).set({ field_visibility: null }).where({ ID: 'prod-tshirt-classic' });
+  await UPDATE(Products).set({ field_visibility: null, care_products_url: null }).where({ ID: 'prod-tshirt-classic' });
   await UPDATE(ProductVariants).set({ field_visibility: null }).where({ ID: 'var-tshirt-blue-m' });
   await UPDATE(Batches).set({ field_visibility: null }).where({ ID: 'batch-2026-05-A' });
   await UPDATE(ProductBOMs).set({ visibility: 'public' }).where({ parent_ID: 'var-tshirt-blue-m' });
@@ -83,6 +83,23 @@ describe('Per-field overrides', () => {
     expect(data.product.name).toBe('Classic T-Shirt');
     expect(data.product.fibre_composition).toBeTruthy();
     expect(data.product.country_of_origin).toBeTruthy();
+  });
+
+  test('a recommended-products URL is public by default and can be hidden', async () => {
+    const { Products } = cds.entities('dpp');
+    // Default visibility → a set value is exposed in the consumer DTO.
+    await UPDATE(Products)
+      .set({ care_products_url: 'https://shop.example.com/care' })
+      .where({ ID: 'prod-tshirt-classic' });
+    let { data } = await getPublic(await attachToken('dpp-12345'));
+    expect(data.product.care_products_url).toBe('https://shop.example.com/care');
+
+    // Marked internal → dropped from the consumer DTO.
+    await UPDATE(Products)
+      .set({ field_visibility: JSON.stringify({ care_products_url: 'internal' }) })
+      .where({ ID: 'prod-tshirt-classic' });
+    ({ data } = await getPublic(await attachToken('dpp-12345')));
+    expect(data.product).not.toHaveProperty('care_products_url');
   });
 
   test('an internal-default field can be revealed (sku → public)', async () => {

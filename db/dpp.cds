@@ -5,6 +5,7 @@ using {
   dpp.Visibility,
   dpp.QRCodeStatus,
   dpp.MarketingLinkType,
+  dpp.MarketingMediaType,
   dpp.URL
 } from './common';
 using { dpp.Products, dpp.ProductVariants, dpp.Batches, dpp.ProductItems } from './product';
@@ -69,7 +70,11 @@ entity DPPMarketingLinks : identified, audited {
   dpp                 : Association to DPPs;                     // optional; null = all org DPPs
   link_type           : MarketingLinkType default 'advertisement';
   title               : String(200) not null;
+  subtitle            : String(300);                          // optional CTA / teaser line shown under the title
   url                 : URL;
+  media_type          : MarketingMediaType default 'image';   // image tile or video tile (play overlay)
+  image_url           : URL;                                  // external thumbnail
+  image_data          : LargeString;                          // uploaded thumbnail as a base64 data URL (preferred over image_url)
   display_order       : Integer default 0;
   is_active           : Boolean default true;
   valid_from          : Date;

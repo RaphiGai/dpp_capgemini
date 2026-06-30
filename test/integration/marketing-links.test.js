@@ -83,6 +83,52 @@ describe('DPP marketing links', () => {
     expect(data.marketing.map((m) => m.title)).not.toContain('Hidden ad');
   });
 
+  test('media fields (subtitle, media_type, image_url) reach the public view', async () => {
+    await POST(
+      '/odata/v4/dpp/DPPMarketingLinks',
+      {
+        ID: 'ml-test-media',
+        dpp_ID: 'dpp-12345',
+        link_type: 'related_product',
+        title: 'Matching scarf',
+        subtitle: 'Complete the look',
+        media_type: 'video',
+        image_url: 'https://example.com/scarf.jpg',
+        url: 'https://shop.example.com/scarf'
+      },
+      alice
+    );
+    const token = await freshToken('dpp-12345');
+    const { data } = await GET(`/public/dpp/${token}`);
+    const link = data.marketing.find((m) => m.title === 'Matching scarf');
+    expect(link).toBeTruthy();
+    expect(link.subtitle).toBe('Complete the look');
+    expect(link.media_type).toBe('video');
+    expect(link.image_url).toBe('https://example.com/scarf.jpg');
+  });
+
+  test('rejects an image URL that is not http(s)', async () => {
+    await expectStatus(
+      POST(
+        '/odata/v4/dpp/DPPMarketingLinks',
+        { ID: 'ml-bad-img', link_type: 'other', title: 'Bad image', image_url: 'ftp://nope/x.png' },
+        alice
+      ),
+      400
+    );
+  });
+
+  test('a marketing-link change does not revert the DPP lifecycle status (decoupled from drift)', async () => {
+    const before = (await GET("/odata/v4/dpp/DPPs('dpp-12345')?$select=status", alice)).data.status;
+    await POST(
+      '/odata/v4/dpp/DPPMarketingLinks',
+      { ID: 'ml-nodrift', dpp_ID: 'dpp-12345', link_type: 'promotion', title: 'No-drift campaign' },
+      alice
+    );
+    const after = (await GET("/odata/v4/dpp/DPPs('dpp-12345')?$select=status", alice)).data.status;
+    expect(after).toBe(before);
+  });
+
   test('tenant isolation: another org cannot see or attach to ORG-A links', async () => {
     const { data } = await GET('/odata/v4/dpp/DPPMarketingLinks?$select=ID', dan);
     expect(data.value.every((m) => m.ID !== 'ml-summer-2026')).toBe(true);

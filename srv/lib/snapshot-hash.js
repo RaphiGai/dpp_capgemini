@@ -50,6 +50,10 @@ function normalizeForHash(snap) {
     delete n.dpp.status;
     delete n.dpp.visibility;
   }
+  // Marketing links are served LIVE (not frozen into the consumer view) and are decoupled
+  // from the version/drift lifecycle: a campaign edit must NOT revert an approved/published
+  // DPP to draft, nor show as a "pending change". Exclude them from the hash and the diff.
+  if (n && typeof n === 'object') delete n.marketing_links;
   return n;
 }
 

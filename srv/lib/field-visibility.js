@@ -28,6 +28,8 @@ const CATALOGUES = {
     model: { vis: 'public', locked: false },
     description: { vis: 'public', locked: false },
     gtin: { vis: 'internal', locked: false },
+    upc: { vis: 'internal', locked: false },
+    ein: { vis: 'internal', locked: false },
     fibre_composition: { vis: 'public', locked: true }, // EU Textile Reg 1007/2011
     substances_of_concern: { vis: 'public', locked: true }, // REACH SVHC / SCIP, ESPR
     care_instructions: { vis: 'public', locked: true }, // ESPR lifecycle info
@@ -42,6 +44,10 @@ const CATALOGUES = {
     repair_video_url: { vis: 'public', locked: false },
     disposal_video_url: { vis: 'public', locked: false },
     reuse_video_url: { vis: 'public', locked: false },
+    care_products_url: { vis: 'public', locked: false },
+    repair_products_url: { vis: 'public', locked: false },
+    reuse_products_url: { vis: 'public', locked: false },
+    disposal_products_url: { vis: 'public', locked: false },
     storytelling: { vis: 'public', locked: false },
   },
   variant: {

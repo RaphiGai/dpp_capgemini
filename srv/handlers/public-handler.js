@@ -136,6 +136,10 @@ function toConsumerDTO(dpp, ctx) {
           repair_video_url: ctx.product.repair_video_url,
           disposal_video_url: ctx.product.disposal_video_url,
           reuse_video_url: ctx.product.reuse_video_url,
+          care_products_url: ctx.product.care_products_url,
+          repair_products_url: ctx.product.repair_products_url,
+          reuse_products_url: ctx.product.reuse_products_url,
+          disposal_products_url: ctx.product.disposal_products_url,
           country_of_origin: ctx.product.country_of_origin,
           substances_of_concern: ctx.product.substances_of_concern,
           espr_compliance: ctx.product.espr_compliance,
@@ -229,7 +233,11 @@ async function loadMarketingLinks(owningOrgId, dppId) {
     .map((l) => ({
       link_type: l.link_type,
       title: l.title,
+      subtitle: l.subtitle,
       url: l.url,
+      media_type: l.media_type || 'image', // null (CSV-seeded rows) ⇒ image
+      image_url: l.image_url,
+      image_data: l.image_data,
       display_order: l.display_order,
       valid_from: l.valid_from,
       valid_to: l.valid_to,
@@ -344,7 +352,10 @@ async function loadDPPContext(dpp) {
  */
 async function buildConsumerSnapshot(dpp) {
   const ctx = await loadDPPContext(dpp);
-  return toConsumerDTO(dpp, ctx);
+  // Marketing is served LIVE (re-resolved in overlayLive on every read), never frozen —
+  // this keeps (org-wide) base64 thumbnails out of every published version snapshot and
+  // lets campaigns/validity windows update without re-publishing.
+  return { ...toConsumerDTO(dpp, ctx), marketing: [] };
 }
 
 /**
@@ -359,11 +370,18 @@ async function overlayLive(frozen, dpp, versionNumber) {
   const documents = (frozen.documents || [])
     .filter((d) => liveById.has(d.id))
     .map((d) => ({ ...d, download_url: liveById.get(d.id).download_url }));
+  // Marketing is resolved LIVE on every read (not part of the frozen snapshot): new or
+  // edited campaigns appear without re-publishing, and the valid_from/valid_to window is
+  // evaluated against today.
+  const { Products } = cds.entities('dpp');
+  const prod = await SELECT.one.from(Products).columns('owning_organization_ID').where({ ID: dpp.product_ID });
+  const marketing = await loadMarketingLinks(prod && prod.owning_organization_ID, dpp.ID);
   return {
     ...frozen,
     version: versionNumber,
     qr_code: dpp.qr_token ? { id: dpp.qr_token, value: dpp.qr_payload_url } : null,
     documents,
+    marketing,
   };
 }
 
